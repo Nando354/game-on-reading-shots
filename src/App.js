@@ -1,8 +1,8 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'; // Import useMemo
-import Video from './components/Video'; // Ensure the path to your Video.jsx component is correct
-import './App.css'; // Your main app CSS
-import './Video.css'; // The CSS for video responsiveness (if you have it set up)
-import ShotButtons from './components/ShotButtons'; // Import the ShotButtons component
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Video from './components/Video';
+import './App.css';
+import './Video.css';
+import ShotButtons from './components/ShotButtons';
 
 function App() {
   // Define an array of video objects, each with an ID, a description/comment, and the correct shot
@@ -28,6 +28,7 @@ function App() {
 
   // Create a ref to access methods exposed by the Video component
   const videoRef = useRef(null);
+  const videoSectionRef = useRef(null); // Ref for the video section to enable scrolling
 
   // State to display the current player state
   const [playerState, setPlayerState] = useState('Not Ready');
@@ -178,6 +179,13 @@ function App() {
     }
   }, [isPlayerReady, videoRef, startAtTime, setShotMessage]); // Added startAtTime to dependencies
 
+  // Function to scroll to the video section
+  const scrollToVideoSection = useCallback(() => {
+    if (videoSectionRef.current) {
+      videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, []);
+
 
   return (
     <div className="App">
@@ -185,59 +193,94 @@ function App() {
         <h1>READ THE SHOT!</h1>
       </header>
       <main>
-        <h2>Read the body, arm and hand motion. Then select which shot the hitter is hitting</h2>
-        <p>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds.</p>
-        <p>VIDEO: <strong>{playerState}</strong></p>
-
-        <Video
-          key={currentVideo.id}
-          ref={videoRef}
-          embedId={currentVideo.id}
-          startTime={startAtTime}
-          stopTime={dynamicStopTime}
-          onPlayerInitialized={handlePlayerInitialized}
-        />
-
-        {shotMessage && <p style={{ marginTop: '10px', fontSize: '3.1em', fontWeight: 'bold', color: '#333' }}>{shotMessage}</p>}
-
-        <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady} />
-
-        <div style={{ marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
-          <button
-            onClick={() => {
-              if (isPlayerReady) {
-                videoRef.current.seekTo(startAtTime, true);
-                setShotMessage('');
-                setDynamicStopTime(currentVideo.initialStopTime);
-              } else {
-                console.warn("App.js: Video player methods not ready when Restart button clicked.");
-                setShotMessage("Player not ready. Please wait a moment.");
-              }
-            }}
-            style={buttonStyle}
-            disabled={!isPlayerReady}
-          >
-            Restart from Start Time
+        {/* Instructions Section */}
+        <section id="instructions-section" style={{ padding: '20px', maxWidth: '800px', margin: '20px auto', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
+          <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '15px' }}>How to Use This App:</h2>
+          <p style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555' }}>
+            Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
+            Follow these steps to improve your game:
+          </p>
+          <ol style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555', paddingLeft: '25px' }}>
+            <li><strong>Watch the Video:</strong> Press play on the video. The video will show you an attack from the opponent.</li>
+            <li><strong>Read the Shot:</strong> Observe the hitter's body positioning, arm positioning, and hand motion carefully.</li>
+            <li><strong>Select the Shot:</strong> Choose the button that corresponds to the shot you believe the hitter is attempting (e.g., Line, Angle, Cut, Short, Jump Set).</li>
+            <li><strong>Get Feedback:</strong>
+              <ul>
+                <li>If you're **Correct**, the video will continue playing for a few more seconds, allowing you to see the outcome.</li>
+                <li>If you're **Incorrect**, the video will reset to the start time, giving you another chance to read the shot.</li>
+              </ul>
+            </li>
+            <li><strong>Restart or Next:</strong>
+              <ul>
+                <li>Click "Restart Video" to re-watch the current video from the beginning of the action.</li>
+                <li>Click "Next Video" to move to the next video in the list.</li>
+              </ul>
+            </li>
+          </ol>
+          <p style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555', marginTop: '20px' }}>
+          </p>
+          <button onClick={scrollToVideoSection} style={{ ...buttonStyle, backgroundColor: '#17a2b8' }}>
+            Play Read The Shot!
           </button>
-          {/* <button
-            onClick={handlePlayVideo} 
-            style={buttonStyle}
-            disabled={!isPlayerReady}
-          >
-            Play Video
-          </button> */}
-          <button
-            onClick={handleNextVideo}
-            style={buttonStyle}
-            disabled={!isPlayerReady}
-          >
-            Next Video
-          </button>
-        </div>
+        </section>
 
+        {/* Video Section */}
+        <section id="video-section" ref={videoSectionRef}>
+          <p style={{ fontSize: '1.2em', color: '#444' }}>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
+          {/* <p style={{ fontSize: '1.2em', color: '#444' }}>VIDEO: <strong>{playerState}</strong></p> */}
+
+          <Video
+            key={currentVideo.id}
+            ref={videoRef}
+            embedId={currentVideo.id}
+            startTime={startAtTime}
+            stopTime={dynamicStopTime}
+            onPlayerInitialized={handlePlayerInitialized}
+          />
+
+          {shotMessage && <p style={{ marginTop: '10px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: '#333' }}>{shotMessage}</p>}
+        </section>
+
+        {/* Controls Section */}
+        <section id="controls-section">
+          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady} />
+
+          <div style={{ marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <button
+              onClick={() => {
+                if (isPlayerReady) {
+                  videoRef.current.seekTo(startAtTime, true);
+                  setShotMessage('');
+                  setDynamicStopTime(currentVideo.initialStopTime);
+                } else {
+                  console.warn("App.js: Video player methods not ready when Restart button clicked.");
+                  setShotMessage("Player not ready. Please wait a moment.");
+                }
+              }}
+              style={buttonStyle}
+              disabled={!isPlayerReady}
+            >
+              Restart Video
+            </button>
+            {/* <button
+              onClick={handlePlayVideo} 
+              style={buttonStyle}
+              disabled={!isPlayerReady}
+            >
+              Play Video
+            </button> */}
+            <button
+              onClick={handleNextVideo}
+              style={buttonStyle}
+              disabled={!isPlayerReady}
+            >
+              Next Video
+            </button>
+          </div>
+        </section>
         
-
-        <div style={{ marginTop: '30px', textAlign: 'center' }}>
+        {/* Video List Section */}
+        <section id="video-list-section" style={{ marginTop: '30px', textAlign: 'center' }}>
           <h3>Video List:</h3>
           <ul style={{ listStyle: 'none', padding: 0 }}>
             {videoList.map((video, index) => (
@@ -256,7 +299,7 @@ function App() {
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       </main>
     </div>
   );
