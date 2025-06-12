@@ -3,28 +3,31 @@ import Video from './components/Video';
 import './App.css';
 import './Video.css';
 import ShotButtons from './components/ShotButtons';
+import Instructions from './components/Instructions'; // Import the new Instructions component
 
 function App() {
-  // Define an array of video objects, each with an ID, a description/comment, and the correct shot
-  // Now includes initialStartTime and initialStopTime for each video
-  // Wrap videoList in useMemo to ensure stable reference across renders
-  const videoList = useMemo(() => [
-    { id: "21KPtT-e73o", description: "https://youtube.com/shorts/21KPtT-e73o?si=h9HMmPsz7wW5JSUH", correctShot: "Short", initialStartTime: 2.0, initialStopTime: 4.80 },
-    { id: "ncticos1PKc", description: "Match 2", correctShot: "Angle", initialStartTime: 2.0, initialStopTime: 4.55},
-    { id: "OoqS1pvUQbY", description: "Santa Monica Beach Volleyball Short", correctShot: "Line", initialStartTime: 2.0, initialStopTime: 3.35 },
-    { id: "RGywebZ9oW8", description: "https://www.youtube.com/shorts/RGywebZ9oW8", correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.46 },
-    { id: "4x8cuBp8hl4", description: "https://youtube.com/shorts/4x8cuBp8hl4?si=8sZRdQ_VnJ_g2C1t", correctShot: "Cut", initialStartTime: 1.0, initialStopTime: 4.57 },
-    { id: "qKleF-nCHGc", description: "https://youtube.com/shorts/qKleF-nCHGc?si=f31EUlHr4WD7RvVm", correctShot: "Angle", initialStartTime: 0.5, initialStopTime: 4.68 },
-    { id: "wqzozK6ErrI", description: "https://youtube.com/shorts/wqzozK6ErrI?si=-YQ7SSDP5gKbNuEW", correctShot: "Jump Set", initialStartTime: 2.5, initialStopTime: 4.27 },
-    { id: "yGva0-yHgbE", description: "https://youtube.com/shorts/yGva0-yHgbE?si=UtAlsEh0tz_ix2KO", correctShot: "Line", initialStartTime: 2.5, initialStopTime: 4.60 }
-  ], []); // Empty dependency array means it's created only once
+  // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
+  // The 'title' and 'videoUrl' will be dynamically populated.
+  // Changed to useState, with useMemo providing the initial value.
+  const [videoList, setVideoList] = useState(() => [ // FIX: Declare videoList as state
+    { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 2.0, initialStopTime: 4.80 },
+    { id: "ncticos1PKc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 2.0, initialStopTime: 4.55},
+    { id: "OoqS1pvUQbY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.0, initialStopTime: 3.35 },
+    { id: "RGywebZ9oW8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.46 },
+    { id: "4x8cuBp8hl4", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 1.0, initialStopTime: 4.57 },
+    { id: "qKleF-nCHGc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.5, initialStopTime: 4.68 },
+    { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Jump Set", initialStartTime: 2.5, initialStopTime: 4.27 },
+    { id: "yGva0-yHgbE", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.5, initialStopTime: 4.60 }
+  ]); // Empty dependency array removed from useMemo because it's now wrapped by useState
+
 
   // State to manage the currently selected video from the list
   // Initialize with the first video in the list
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0); // Track current video by index
+  // Ensure currentVideo state is initialized with the correct structure from videoList
   const [currentVideo, setCurrentVideo] = useState(videoList[currentVideoIndex]);
   const [startAtTime, setStartAtTime] = useState(videoList[currentVideoIndex].initialStartTime);
-  const [dynamicStopTime, setDynamicStopTime] = useState(videoList[currentVideoIndex].initialStopTime); 
+  const [dynamicStopTime, setDynamicStopTime] = useState(videoList[currentVideoIndex].initialStopTime);
 
   // Create a ref to access methods exposed by the Video component
   const videoRef = useRef(null);
@@ -39,9 +42,15 @@ function App() {
   // State to hold the message from clicked ShotButton
   const [shotMessage, setShotMessage] = useState('');
 
-  // Update currentVideo state when currentVideoIndex changes
+  // State to track if video details are being loaded (e.g., titles from YouTube API)
+  const [isLoadingVideoDetails, setIsLoadingVideoDetails] = useState(true);
+
+  // Update currentVideo state, startAtTime, and dynamicStopTime when currentVideoIndex changes
   useEffect(() => {
     setCurrentVideo(videoList[currentVideoIndex]);
+    setStartAtTime(videoList[currentVideoIndex].initialStartTime);
+    setDynamicStopTime(videoList[currentVideoIndex].initialStopTime);
+    setIsPlayerReady(false); // Reset readiness for the new video to trigger re-initialization in Video.jsx
   }, [currentVideoIndex, videoList]); // Depend on videoList to ensure it's always the latest
 
 
@@ -51,10 +60,7 @@ function App() {
     console.log("App.js: Video player is now ready!");
     // Simply set isPlayerReady to true. The interval will then start polling for state.
     setIsPlayerReady(true);
-    // Removed the setTimeout and immediate setPlayerState calls from here.
-    // The setInterval in the useEffect below will now be solely responsible
-    // for updating the playerState based on the videoRef's status.
-  }, [setIsPlayerReady]); // Dependencies: only setIsPlayerReady (which is a stable function)
+  }, [setIsPlayerReady]);
 
 
   // Set up an interval to regularly update the player state for display
@@ -119,7 +125,7 @@ function App() {
       } else {
         setShotMessage('Wrong! You failed to read the shot.');
         videoRef.current.seekTo(startAtTime, true);
-        
+
         setTimeout(() => {
           if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
             videoRef.current.playVideo();
@@ -146,45 +152,121 @@ function App() {
     setIsPlayerReady(false);
   }, [currentVideoIndex, videoList, setShotMessage, setStartAtTime, setDynamicStopTime, setIsPlayerReady]);
 
-  // Handle Play button click
-  const handlePlayVideo = useCallback(() => {
-    if (isPlayerReady && videoRef.current) {
-      const currentState = videoRef.current.getPlayerState();
-      console.log("App.js: Play button clicked. Current player state:", currentState);
-
-      // If already playing or buffering, do nothing or provide feedback
-      if (currentState === window.YT.PlayerState.PLAYING || currentState === window.YT.PlayerState.BUFFERING) {
-        setShotMessage('Video is already playing!');
-        return;
-      }
-
-      // If ended, seek to start before playing
-      if (currentState === window.YT.PlayerState.ENDED) {
-        videoRef.current.seekTo(startAtTime, true); // Seek to original start time
-        console.log("App.js: Seeking to start time before playing.");
-      }
-
-      // A small delay is still a good practice for programmatic calls
-      setTimeout(() => {
-        if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-          videoRef.current.playVideo();
-          console.log("App.js: Attempting to play video via button with delay.");
-        }
-      }, 150); // Slightly increased delay to 150ms
-
-      setShotMessage(''); // Clear any previous message
-    } else {
-      console.warn("App.js: Video player methods not ready when Play button clicked.");
-      setShotMessage("Player not ready. Please wait a moment.");
-    }
-  }, [isPlayerReady, videoRef, startAtTime, setShotMessage]); // Added startAtTime to dependencies
-
   // Function to scroll to the video section
   const scrollToVideoSection = useCallback(() => {
     if (videoSectionRef.current) {
       videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, []);
+
+  // Effect to fetch video details dynamically for the list
+  useEffect(() => {
+    const fetchAndPopulateVideoDetails = async () => {
+      setIsLoadingVideoDetails(true);
+      const updatedVideoList = [...videoList]; // Create a mutable copy
+
+      for (let i = 0; i < updatedVideoList.length; i++) {
+        const video = updatedVideoList[i];
+        // Only fetch if title is still "Loading title..." or if videoUrl is null
+        if (video.title === "Loading title..." || video.videoUrl === null) {
+          let tempPlayer = null;
+          let tempDiv = null;
+
+          try {
+            // Create a temporary hidden div and iframe to initialize a YouTube player
+            tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '-9999px';
+            document.body.appendChild(tempDiv);
+
+            const playerReadyPromise = new Promise((resolve, reject) => {
+              let attempts = 0;
+              const maxAttempts = 50; 
+
+              const createTempPlayer = () => {
+                const tempIframe = tempDiv.querySelector('iframe');
+                // Check for global YT object and if iframe is ready
+                if (window.YT && window.YT.Player && tempIframe && tempIframe.contentWindow) {
+                  tempPlayer = new window.YT.Player(tempIframe, {
+                    videoId: video.id,
+                    playerVars: {
+                      controls: 0, autoplay: 0, mute: 1, enablejsapi: 1,
+                    },
+                    events: {
+                      'onReady': (event) => resolve(event.target),
+                      'onError': (error) => {
+                        console.error("App.js: Temporary player error for ID:", video.id, error);
+                        reject(new Error(`Failed to load video ${error.data}`));
+                      },
+                    },
+                  });
+                } else {
+                  attempts++;
+                  if (attempts < maxAttempts) {
+                    setTimeout(createTempPlayer, 100);
+                  } else {
+                    reject(new Error("Timeout: YouTube API or temporary iframe not ready for video details."));
+                  }
+                }
+              };
+
+              const newIframe = document.createElement('iframe');
+              newIframe.id = `temp-yt-player-${video.id}-${Date.now()}`;
+              newIframe.width = '1';
+              newIframe.height = '1';
+              newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1`;
+              newIframe.style.border = 'none';
+              tempDiv.appendChild(newIframe);
+
+              createTempPlayer();
+            });
+
+            const loadedPlayer = await playerReadyPromise;
+            const videoData = loadedPlayer.getVideoData();
+            const videoUrl = loadedPlayer.getVideoUrl();
+
+            if (!videoData || !videoData.title) {
+              throw new Error("Could not retrieve video title from API.");
+            }
+            
+            // Update the specific video object in the copied list with fetched title and URL
+            updatedVideoList[i] = {
+              ...video,
+              title: videoData.title,
+              videoUrl: videoUrl,
+              // Ensure initialStopTime does not exceed video duration if duration is available
+              initialStopTime: videoData.duration ? Math.min(video.initialStopTime, videoData.duration) : video.initialStopTime,
+            };
+
+          } catch (error) {
+            console.error(`Error fetching details for video ID ${video.id}:`, error);
+            // Fallback for error: retain existing title or set an error message
+            updatedVideoList[i] = {
+              ...video,
+              title: `Error loading: ${error.message || 'Unknown error'}`,
+              videoUrl: `https://www.youtube.com/watch?v=${video.id}` // Fallback URL
+            };
+          } finally {
+            // Clean up temporary player and div
+            if (tempPlayer && typeof tempPlayer.destroy === 'function') {
+                try { tempPlayer.destroy(); } catch (e) { console.warn("Error destroying temp player:", e); }
+            }
+            if (tempDiv && tempDiv.parentNode) {
+                tempDiv.parentNode.removeChild(tempDiv);
+            }
+          }
+        }
+      }
+      // Only update state if the list has actually changed to prevent unnecessary re-renders
+      if (JSON.stringify(updatedVideoList) !== JSON.stringify(videoList)) {
+        setVideoList(updatedVideoList);
+      }
+      setIsLoadingVideoDetails(false);
+    };
+
+    fetchAndPopulateVideoDetails();
+  }, [videoList]); // Dependency: videoList to re-run if it changes (e.g., initially or if a video entry structure changes)
 
 
   return (
@@ -193,57 +275,35 @@ function App() {
         <h1>READ THE SHOT!</h1>
       </header>
       <main>
-        {/* Instructions Section */}
-        <section id="instructions-section" style={{ padding: '20px', maxWidth: '800px', margin: '20px auto', backgroundColor: '#fff', borderRadius: '8px', boxShadow: '0 2px 10px rgba(0,0,0,0.1)' }}>
-          <h2 style={{ color: '#333', fontSize: '2em', marginBottom: '15px' }}>How to Use This App:</h2>
-          <p style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555' }}>
-            Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
-            Follow these steps to improve your game:
-          </p>
-          <ol style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555', paddingLeft: '25px' }}>
-            <li><strong>Watch the Video:</strong> Press play on the video. The video will show you an attack from the opponent.</li>
-            <li><strong>Read the Shot:</strong> Observe the hitter's body positioning, arm positioning, and hand motion carefully.</li>
-            <li><strong>Select the Shot:</strong> Choose the button that corresponds to the shot you believe the hitter is attempting (e.g., Line, Angle, Cut, Short, Jump Set).</li>
-            <li><strong>Get Feedback:</strong>
-              <ul>
-                <li>If you're **Correct**, the video will continue playing for a few more seconds, allowing you to see the outcome.</li>
-                <li>If you're **Incorrect**, the video will reset to the start time, giving you another chance to read the shot.</li>
-              </ul>
-            </li>
-            <li><strong>Restart or Next:</strong>
-              <ul>
-                <li>Click "Restart Video" to re-watch the current video from the beginning of the action.</li>
-                <li>Click "Next Video" to move to the next video in the list.</li>
-              </ul>
-            </li>
-          </ol>
-          <p style={{ fontSize: '1.1em', lineHeight: '1.6', color: '#555', marginTop: '20px' }}>
-          </p>
-          <button onClick={scrollToVideoSection} style={{ ...buttonStyle, backgroundColor: '#17a2b8' }}>
-            Play Read The Shot!
-          </button>
-        </section>
+        {/* Instructions Section - Now a separate component */}
+        <Instructions scrollToVideoSection={scrollToVideoSection} buttonStyle={buttonStyle} isLoading={isLoadingVideoDetails} />
 
         {/* Video Section */}
         <section id="video-section" ref={videoSectionRef}>
-          <p style={{ fontSize: '1.2em', color: '#444' }}>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
-          {/* <p style={{ fontSize: '1.2em', color: '#444' }}>VIDEO: <strong>{playerState}</strong></p> */}
+          <p style={{ fontSize: '.6em', color: '#444' }}>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
 
-          <Video
-            key={currentVideo.id}
-            ref={videoRef}
-            embedId={currentVideo.id}
-            startTime={startAtTime}
-            stopTime={dynamicStopTime}
-            onPlayerInitialized={handlePlayerInitialized}
-          />
+          {/* Conditional rendering for loading state */}
+          {isLoadingVideoDetails ? (
+            <p style={{ textAlign: 'center', fontSize: '1.2em', color: '#666', marginTop: '20px' }}>
+              Loading video details... Please wait...
+            </p>
+          ) : (
+            <Video
+              key={currentVideo.id} // Key ensures re-mount of Video component when ID changes
+              ref={videoRef}
+              embedId={currentVideo.id}
+              startTime={startAtTime}
+              stopTime={dynamicStopTime}
+              onPlayerInitialized={handlePlayerInitialized}
+            />
+          )}
 
-          {shotMessage && <p style={{ marginTop: '10px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: '#333' }}>{shotMessage}</p>}
+          {shotMessage && <p style={{ marginTop: '0px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: '#333' }}>{shotMessage}</p>}
         </section>
 
         {/* Controls Section */}
         <section id="controls-section">
-          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady} />
+          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady && !isLoadingVideoDetails} />
 
           <div style={{ marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
             <button
@@ -258,27 +318,20 @@ function App() {
                 }
               }}
               style={buttonStyle}
-              disabled={!isPlayerReady}
+              disabled={!isPlayerReady || isLoadingVideoDetails}
             >
               Restart Video
             </button>
-            {/* <button
-              onClick={handlePlayVideo} 
-              style={buttonStyle}
-              disabled={!isPlayerReady}
-            >
-              Play Video
-            </button> */}
             <button
               onClick={handleNextVideo}
               style={buttonStyle}
-              disabled={!isPlayerReady}
+              disabled={!isPlayerReady || isLoadingVideoDetails}
             >
               Next Video
             </button>
           </div>
         </section>
-        
+
         {/* Video List Section */}
         <section id="video-list-section" style={{ marginTop: '30px', textAlign: 'center' }}>
           <h3>Video List:</h3>
@@ -295,7 +348,8 @@ function App() {
                   cursor: 'default'
                 }}
               >
-                {video.description}
+                {/* Display only the video URL now */}
+                {video.videoUrl}
               </li>
             ))}
           </ul>
@@ -311,7 +365,7 @@ const buttonStyle = {
   fontSize: '20px',
   fontWeight: 'bold',
   cursor: 'pointer',
-  backgroundColor: 'rgba(249, 175, 73, 0.95)',
+  backgroundColor: 'rgba(246, 150, 15, 0.95)', // Updated color for consistency
   color: 'white',
   border: 'none',
   borderRadius: '8px',
