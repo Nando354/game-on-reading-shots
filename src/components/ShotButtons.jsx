@@ -46,15 +46,18 @@ export default function ShotButtons({ onShotButtonClick, isPlayerReady }) { // A
       <button onClick={() => onShotButtonClick('Jumbo')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
         Jumbo
       </button>
-      <button onClick={() => onShotButtonClick('Hit')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
-        Hit
-      </button>
       <button onClick={() => onShotButtonClick('Set Over')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
         Set Over
       </button>
       <button onClick={() => onShotButtonClick('Jump Set')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
         Jump Set
-      </button>     
+      </button>
+      <button onClick={() => onShotButtonClick('Hit on 1')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+        Hit on 1
+      </button>
+      <button onClick={() => onShotButtonClick('Hit on 2')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+        Hit on 2
+      </button>
     </div>
   );
 }

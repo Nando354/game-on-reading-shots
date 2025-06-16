@@ -5,29 +5,55 @@ import './Video.css';
 import ShotButtons from './components/ShotButtons';
 import Instructions from './components/Instructions'; // Import the new Instructions component
 
+// Utility function to shuffle an array (Fisher-Yates (Knuth) shuffle)
+const shuffleArray = (array) => {
+  let currentIndex = array.length, randomIndex;
+  // While there remain elements to shuffle.
+  while (currentIndex !== 0) {
+    // Pick a remaining element.
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    // And swap it with the current element.
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]];
+  }
+  return array;
+};
+
 function App() {
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
-  // The 'title' and 'videoUrl' will be dynamically populated.
-  // Changed to useState, with useMemo providing the initial value.
-  const [videoList, setVideoList] = useState(() => [ // FIX: Declare videoList as state
+  const initialVideoList = useMemo(() => [
     { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 2.0, initialStopTime: 4.80 },
     { id: "ncticos1PKc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 2.0, initialStopTime: 4.55},
     { id: "OoqS1pvUQbY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.0, initialStopTime: 3.35 },
-    { id: "RGywebZ9oW8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.46 },
+    { id: "RGywebZ9oW8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.48 },
     { id: "4x8cuBp8hl4", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 1.0, initialStopTime: 4.57 },
-    { id: "qKleF-nCHGc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.5, initialStopTime: 4.68 },
-    { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Jump Set", initialStartTime: 2.5, initialStopTime: 4.27 },
-    { id: "yGva0-yHgbE", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.5, initialStopTime: 4.60 }
-  ]); // Empty dependency array removed from useMemo because it's now wrapped by useState
+    { id: "i9Zh0oxh5gs", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 5.0, initialStopTime: 9.51 },
+    { id: "oa9wFeBFzMY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.0, initialStopTime: 8.26 },
+    { id: "sg9C1Hu3HW8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 3.0, initialStopTime: 7.00 },
+    { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 1.0, initialStopTime: 5.89 },
+    { id: "lKDk0zIWNC4", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 5.04 },
+    { id: "oFm_dwzmjD8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 4.52 },
+    { id: "trV2xBDevf8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.0, initialStopTime: 6.59 },
+    { id: "jJ3o8WQwxgs", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 0.0, initialStopTime: 2.05 },
+    { id: "Nf39ym_abvo", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 5.0, initialStopTime: 9.23 },
+    { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 16.0, initialStopTime: 21.17 },
+    { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 }
+  ], []);
 
+  // State to hold the fully populated video list (with titles/URLs fetched)
+  const [videoList, setVideoList] = useState(initialVideoList);
 
-  // State to manage the currently selected video from the list
-  // Initialize with the first video in the list
-  const [currentVideoIndex, setCurrentVideoIndex] = useState(0); // Track current video by index
-  // Ensure currentVideo state is initialized with the correct structure from videoList
-  const [currentVideo, setCurrentVideo] = useState(videoList[currentVideoIndex]);
-  const [startAtTime, setStartAtTime] = useState(videoList[currentVideoIndex].initialStartTime);
-  const [dynamicStopTime, setDynamicStopTime] = useState(videoList[currentVideoIndex].initialStopTime);
+  // State for the shuffled playback queue
+  const [shuffledVideoQueue, setShuffledVideoQueue] = useState([]);
+  const [currentShuffledIndex, setCurrentShuffledIndex] = useState(0);
+
+  // Use currentVideo from the shuffled queue
+  // This will be the video currently playing or about to play
+  const currentVideo = shuffledVideoQueue[currentShuffledIndex] || videoList[0]; // Fallback to first video in original list
+
+  const [startAtTime, setStartAtTime] = useState(currentVideo.initialStartTime);
+  const [dynamicStopTime, setDynamicStopTime] = useState(currentVideo.initialStopTime);
 
   // Create a ref to access methods exposed by the Video component
   const videoRef = useRef(null);
@@ -41,24 +67,60 @@ function App() {
 
   // State to hold the message from clicked ShotButton
   const [shotMessage, setShotMessage] = useState('');
+  // New state for message color
+  const [shotMessageColor, setShotMessageColor] = useState('#333'); // Default color
+
+  // Define an array of possible correct messages
+  const correctMessages = useMemo(() => [
+    "Read that like a Book!",
+    "Let's Go Defense!!!",
+    "Are you Psychic? No you Read the Shot!",
+    "They can't get one Past You!",
+    "Eagle Eyes!!"
+  ], []);
+
+  // Define an array of possible incorrect messages
+  const incorrectMessages = useMemo(() => [
+    "Do you need Glasses?",
+    "You Lost that Point",
+    "Thanks for the Charity",
+    "No Guessing Allowed",
+    "Watch The Hitter",
+    "Nope. Read The Body, Arm, Hand",
+    "Back to Practice",
+    "Apologize to your Teammate"
+  ], []);
 
   // State to track if video details are being loaded (e.g., titles from YouTube API)
   const [isLoadingVideoDetails, setIsLoadingVideoDetails] = useState(true);
 
-  // Update currentVideo state, startAtTime, and dynamicStopTime when currentVideoIndex changes
+  // Initialize shuffled queue when videoList is populated
   useEffect(() => {
-    setCurrentVideo(videoList[currentVideoIndex]);
-    setStartAtTime(videoList[currentVideoIndex].initialStartTime);
-    setDynamicStopTime(videoList[currentVideoIndex].initialStopTime);
-    setIsPlayerReady(false); // Reset readiness for the new video to trigger re-initialization in Video.jsx
-  }, [currentVideoIndex, videoList]); // Depend on videoList to ensure it's always the latest
+    // Check if all videos in the initial list have their titles loaded
+    // and if the shuffled queue hasn't been initialized yet.
+    if (videoList.every(video => video.title !== "Loading title...") && shuffledVideoQueue.length === 0) {
+      setShuffledVideoQueue(shuffleArray([...videoList])); // Create the first shuffled queue
+      setCurrentShuffledIndex(0); // Start from the beginning of the shuffled list
+      console.log("App.js: Initial shuffled video queue created and current index set to 0.");
+    }
+  }, [videoList, shuffledVideoQueue.length]); // Depend on videoList and shuffledQueue.length
+
+  // Update currentVideo details (start/stop times) when the shuffled index changes
+  useEffect(() => {
+    // Ensure the queue is not empty and the index is valid
+    if (shuffledVideoQueue.length > 0 && currentShuffledIndex < shuffledVideoQueue.length) {
+      const selectedVideo = shuffledVideoQueue[currentShuffledIndex];
+      setStartAtTime(selectedVideo.initialStartTime);
+      setDynamicStopTime(selectedVideo.initialStopTime);
+      setIsPlayerReady(false); // Reset readiness for the new video to trigger re-initialization in Video.jsx
+      console.log(`App.js: Current video updated to ID: ${selectedVideo.id}, Start: ${selectedVideo.initialStartTime}, Stop: ${selectedVideo.initialStopTime}`);
+    }
+  }, [currentShuffledIndex, shuffledVideoQueue]);
 
 
   // Function to handle when the Video component signals that its player is ready
-  // Wrapped in useCallback to prevent unnecessary re-creations
   const handlePlayerInitialized = useCallback(() => {
     console.log("App.js: Video player is now ready!");
-    // Simply set isPlayerReady to true. The interval will then start polling for state.
     setIsPlayerReady(true);
   }, [setIsPlayerReady]);
 
@@ -111,7 +173,11 @@ function App() {
   const handleShotButtonClick = useCallback((buttonText) => {
     if (isPlayerReady && videoRef.current) {
       if (buttonText === currentVideo.correctShot) {
-        setShotMessage('Good Read!');
+        // Randomly select a correct message
+        const randomIndex = Math.floor(Math.random() * correctMessages.length);
+        setShotMessage(correctMessages[randomIndex]);
+        setShotMessageColor('green'); // Set color to green for correct answer
+
         const currentTime = videoRef.current.getCurrentTime();
         const newStopTime = currentTime + 3;
         setDynamicStopTime(newStopTime);
@@ -123,7 +189,11 @@ function App() {
         }, 200);
 
       } else {
-        setShotMessage('Wrong! You failed to read the shot.');
+        // Randomly select an incorrect message
+        const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
+        setShotMessage(incorrectMessages[randomIndex]);
+        setShotMessageColor('red'); // Set color to red for incorrect answer
+
         videoRef.current.seekTo(startAtTime, true);
 
         setTimeout(() => {
@@ -136,21 +206,32 @@ function App() {
     } else {
       console.warn("App.js: Video player methods not ready when Shot Button clicked.");
       setShotMessage("Player not ready. Please wait a moment.");
+      setShotMessageColor('#333'); // Default color if player not ready
     }
-  }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime]);
+  }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor]);
 
 
-  // Modified handleChangeVideo to cycle through videos
+  // Modified handleNextVideo to use a shuffled queue
   const handleNextVideo = useCallback(() => {
-    const nextIndex = (currentVideoIndex + 1) % videoList.length;
-    const nextVideo = videoList[nextIndex];
+    if (shuffledVideoQueue.length === 0) {
+      console.warn("Shuffled video queue is empty. Cannot play next video.");
+      return;
+    }
 
-    setCurrentVideoIndex(nextIndex);
+    let nextIndex = currentShuffledIndex + 1;
+    // If we reached the end of the shuffled queue, reshuffle and start over
+    if (nextIndex >= shuffledVideoQueue.length) {
+      console.log("App.js: End of shuffled queue reached. Reshuffling video list.");
+      setShuffledVideoQueue(shuffleArray([...videoList])); // Shuffle the original full list
+      nextIndex = 0; // Start from the beginning of the new shuffled list
+    }
+
+    setCurrentShuffledIndex(nextIndex);
     setShotMessage('');
-    setStartAtTime(nextVideo.initialStartTime);
-    setDynamicStopTime(nextVideo.initialStopTime);
-    setIsPlayerReady(false);
-  }, [currentVideoIndex, videoList, setShotMessage, setStartAtTime, setDynamicStopTime, setIsPlayerReady]);
+    setShotMessageColor('#333'); // Reset message color
+    setIsPlayerReady(false); // Reset readiness to trigger player re-initialization for the new video
+  }, [currentShuffledIndex, shuffledVideoQueue, videoList, setShotMessage, setIsPlayerReady, setShotMessageColor]);
+
 
   // Function to scroll to the video section
   const scrollToVideoSection = useCallback(() => {
@@ -163,7 +244,7 @@ function App() {
   useEffect(() => {
     const fetchAndPopulateVideoDetails = async () => {
       setIsLoadingVideoDetails(true);
-      const updatedVideoList = [...videoList]; // Create a mutable copy
+      const updatedVideoList = [...initialVideoList]; // Use initialVideoList as base
 
       for (let i = 0; i < updatedVideoList.length; i++) {
         const video = updatedVideoList[i];
@@ -173,7 +254,6 @@ function App() {
           let tempDiv = null;
 
           try {
-            // Create a temporary hidden div and iframe to initialize a YouTube player
             tempDiv = document.createElement('div');
             tempDiv.style.position = 'absolute';
             tempDiv.style.left = '-9999px';
@@ -182,11 +262,10 @@ function App() {
 
             const playerReadyPromise = new Promise((resolve, reject) => {
               let attempts = 0;
-              const maxAttempts = 50; 
+              const maxAttempts = 50;
 
               const createTempPlayer = () => {
                 const tempIframe = tempDiv.querySelector('iframe');
-                // Check for global YT object and if iframe is ready
                 if (window.YT && window.YT.Player && tempIframe && tempIframe.contentWindow) {
                   tempPlayer = new window.YT.Player(tempIframe, {
                     videoId: video.id,
@@ -215,6 +294,7 @@ function App() {
               newIframe.id = `temp-yt-player-${video.id}-${Date.now()}`;
               newIframe.width = '1';
               newIframe.height = '1';
+              // Ensure HTTPS for the temporary iframe as well
               newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1`;
               newIframe.style.border = 'none';
               tempDiv.appendChild(newIframe);
@@ -229,26 +309,22 @@ function App() {
             if (!videoData || !videoData.title) {
               throw new Error("Could not retrieve video title from API.");
             }
-            
-            // Update the specific video object in the copied list with fetched title and URL
+
             updatedVideoList[i] = {
               ...video,
               title: videoData.title,
               videoUrl: videoUrl,
-              // Ensure initialStopTime does not exceed video duration if duration is available
               initialStopTime: videoData.duration ? Math.min(video.initialStopTime, videoData.duration) : video.initialStopTime,
             };
 
           } catch (error) {
             console.error(`Error fetching details for video ID ${video.id}:`, error);
-            // Fallback for error: retain existing title or set an error message
             updatedVideoList[i] = {
               ...video,
               title: `Error loading: ${error.message || 'Unknown error'}`,
-              videoUrl: `https://www.youtube.com/watch?v=${video.id}` // Fallback URL
+              videoUrl: `https://www.youtube.com/watch?v=${video.id}`
             };
           } finally {
-            // Clean up temporary player and div
             if (tempPlayer && typeof tempPlayer.destroy === 'function') {
                 try { tempPlayer.destroy(); } catch (e) { console.warn("Error destroying temp player:", e); }
             }
@@ -259,6 +335,7 @@ function App() {
         }
       }
       // Only update state if the list has actually changed to prevent unnecessary re-renders
+      // This helps avoid re-triggering effects unnecessarily.
       if (JSON.stringify(updatedVideoList) !== JSON.stringify(videoList)) {
         setVideoList(updatedVideoList);
       }
@@ -266,7 +343,7 @@ function App() {
     };
 
     fetchAndPopulateVideoDetails();
-  }, [videoList]); // Dependency: videoList to re-run if it changes (e.g., initially or if a video entry structure changes)
+  }, [initialVideoList, videoList]); // Depend on initialVideoList to run once, and videoList for comparison
 
 
   return (
@@ -283,9 +360,9 @@ function App() {
           <p style={{ fontSize: '.6em', color: '#444' }}>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
 
           {/* Conditional rendering for loading state */}
-          {isLoadingVideoDetails ? (
+          {isLoadingVideoDetails || shuffledVideoQueue.length === 0 ? (
             <p style={{ textAlign: 'center', fontSize: '1.2em', color: '#666', marginTop: '20px' }}>
-              Loading video details... Please wait...
+              Loading video details and preparing playback queue... Please wait...
             </p>
           ) : (
             <Video
@@ -298,7 +375,8 @@ function App() {
             />
           )}
 
-          {shotMessage && <p style={{ marginTop: '0px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: '#333' }}>{shotMessage}</p>}
+          {/* Apply dynamic color to shotMessage */}
+          {shotMessage && <p style={{ marginTop: '0px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: shotMessageColor }}>{shotMessage}</p>}
         </section>
 
         {/* Controls Section */}
@@ -311,10 +389,17 @@ function App() {
                 if (isPlayerReady) {
                   videoRef.current.seekTo(startAtTime, true);
                   setShotMessage('');
+                  setShotMessageColor('#333'); // Reset message color on restart
                   setDynamicStopTime(currentVideo.initialStopTime);
+                  setTimeout(() => {
+                    if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
+                      videoRef.current.playVideo();
+                    }
+                  }, 100);
                 } else {
                   console.warn("App.js: Video player methods not ready when Restart button clicked.");
                   setShotMessage("Player not ready. Please wait a moment.");
+                  setShotMessageColor('#333'); // Default color if player not ready
                 }
               }}
               style={buttonStyle}
@@ -325,7 +410,7 @@ function App() {
             <button
               onClick={handleNextVideo}
               style={buttonStyle}
-              disabled={!isPlayerReady || isLoadingVideoDetails}
+              disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0}
             >
               Next Video
             </button>
@@ -348,8 +433,8 @@ function App() {
                   cursor: 'default'
                 }}
               >
-                {/* Display only the video URL now */}
-                {video.videoUrl}
+                {/* Display video title and URL (if available) */}
+                {video.videoUrl && `(URL: ${video.videoUrl})`}
               </li>
             ))}
           </ul>
@@ -365,7 +450,7 @@ const buttonStyle = {
   fontSize: '20px',
   fontWeight: 'bold',
   cursor: 'pointer',
-  backgroundColor: 'rgba(246, 150, 15, 0.95)', // Updated color for consistency
+  backgroundColor: 'rgba(249, 175, 73, 0.95)',
   color: 'white',
   border: 'none',
   borderRadius: '8px',
