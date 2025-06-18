@@ -3,7 +3,7 @@ import Video from './components/Video';
 import './App.css';
 import './Video.css';
 import ShotButtons from './components/ShotButtons';
-import Instructions from './components/Instructions'; // Import the new Instructions component
+// Removed Instructions import as its content is now directly in App.js
 
 // Utility function to shuffle an array (Fisher-Yates (Knuth) shuffle)
 const shuffleArray = (array) => {
@@ -21,6 +21,11 @@ const shuffleArray = (array) => {
 };
 
 function App() {
+  // State to control visibility of the instructions page
+  const [showInstructions, setShowInstructions] = useState(true);
+  // New state to control visibility of the video list section
+  const [showVideoList, setShowVideoList] = useState(false); // Initially false
+
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
     { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 2.0, initialStopTime: 4.80 },
@@ -57,7 +62,7 @@ function App() {
 
   // Create a ref to access methods exposed by the Video component
   const videoRef = useRef(null);
-  const videoSectionRef = useRef(null); // Ref for the video section to enable scrolling
+  // Removed videoSectionRef as it's no longer needed for scrolling from instructions
 
   // State to display the current player state
   const [playerState, setPlayerState] = useState('Not Ready');
@@ -233,11 +238,10 @@ function App() {
   }, [currentShuffledIndex, shuffledVideoQueue, videoList, setShotMessage, setIsPlayerReady, setShotMessageColor]);
 
 
-  // Function to scroll to the video section
-  const scrollToVideoSection = useCallback(() => {
-    if (videoSectionRef.current) {
-      videoSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  // Handler for "Start Playing!" button in instructions
+  const handleStartPlaying = useCallback(() => {
+    setShowInstructions(false);
+    setShowVideoList(false); // Ensure video list is hidden when starting to play
   }, []);
 
   // Effect to fetch video details dynamically for the list
@@ -348,114 +352,136 @@ function App() {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>READ THE SHOT!</h1>
-      </header>
-      <main>
-        {/* Instructions Section - Now a separate component */}
-        <Instructions scrollToVideoSection={scrollToVideoSection} buttonStyle={buttonStyle} isLoading={isLoadingVideoDetails} />
+      {showInstructions && (
+        <header className="App-header">
+          <h1>READ THE SHOT!</h1>
+        </header>
+      )}
 
-        {/* Video Section */}
-        <section id="video-section" ref={videoSectionRef}>
-          <p style={{ fontSize: '.6em', color: '#444' }}>Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
-
-          {/* Conditional rendering for loading state */}
-          {isLoadingVideoDetails || shuffledVideoQueue.length === 0 ? (
-            <p style={{ textAlign: 'center', fontSize: '1.2em', color: '#666', marginTop: '20px' }}>
-              Loading video details and preparing playback queue... Please wait...
+      {showInstructions ? (
+        // Instructions Page
+        <section id="instructions-page">
+          <div className="instructions-content">
+            <h2 className="instructions-title">How to Use This App:</h2>
+            <p className="instructions-text">
+              Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
+              Follow these steps to improve your game:
             </p>
-          ) : (
-            <Video
-              key={currentVideo.id} // Key ensures re-mount of Video component when ID changes
-              ref={videoRef}
-              embedId={currentVideo.id}
-              startTime={startAtTime}
-              stopTime={dynamicStopTime}
-              onPlayerInitialized={handlePlayerInitialized}
-            />
-          )}
-
-          {/* Apply dynamic color to shotMessage */}
-          {shotMessage && <p style={{ marginTop: '0px', marginBottom: '0px', fontSize: '3.1em', fontWeight: 'bold', color: shotMessageColor }}>{shotMessage}</p>}
-        </section>
-
-        {/* Controls Section */}
-        <section id="controls-section">
-          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady && !isLoadingVideoDetails} />
-
-          <div style={{ marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
+            <ol className="instructions-list">
+              <li><strong>Watch the Video:</strong> The video will play from a designated start time and pause automatically at a specific point.</li>
+              <li><strong>Read the Shot:</strong> Observe the hitter's body, arm, and hand motion carefully during the playback.</li>
+              <li><strong>Select the Shot:</strong> Choose the button below that corresponds to the shot you believe the hitter is attempting (e.g., Line, Angle, Cut, Short, Jump Set).</li>
+              <li><strong>Get Feedback:</strong>
+                <ul className="feedback-list">
+                  <li>If you're **correct**, the video will continue playing for a few more seconds, allowing you to see the outcome.</li>
+                  <li>If you're **incorrect**, the video will reset to the start time, giving you another chance to read the shot.</li>
+                </ul>
+              </li>
+              <li><strong>Restart or Next:</strong>
+                <ul className="action-list">
+                  <li>Click "Restart from Start Time" to re-watch the current video from the beginning of the action.</li>
+                  <li>Click "Next Video" to move to the next video in the list.</li>
+                </ul>
+              </li>
+            </ol>
             <button
-              onClick={() => {
-                if (isPlayerReady) {
-                  videoRef.current.seekTo(startAtTime, true);
-                  setShotMessage('');
-                  setShotMessageColor('#333'); // Reset message color on restart
-                  setDynamicStopTime(currentVideo.initialStopTime);
-                  setTimeout(() => {
-                    if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-                      videoRef.current.playVideo();
-                    }
-                  }, 100);
-                } else {
-                  console.warn("App.js: Video player methods not ready when Restart button clicked.");
-                  setShotMessage("Player not ready. Please wait a moment.");
-                  setShotMessageColor('#333'); // Default color if player not ready
-                }
-              }}
-              style={buttonStyle}
-              disabled={!isPlayerReady || isLoadingVideoDetails}
+              onClick={handleStartPlaying}
+              className="start-button"
+              disabled={isLoadingVideoDetails} // Disable if videos are still loading
             >
-              Restart Video
+              {isLoadingVideoDetails ? 'Loading Videos...' : 'Start Playing!'}
             </button>
-            <button
-              onClick={handleNextVideo}
-              style={buttonStyle}
-              disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0}
-            >
-              Next Video
-            </button>
+            {isLoadingVideoDetails && (
+              <p className="loading-instructions-message">
+                (Please wait for videos to load)
+              </p>
+            )}
           </div>
         </section>
+      ) : (
+        // Main Application Content
+        <main>
+          {/* Video Section */}
+          <section id="video-section">
+            <p className="video-status-text">Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
+            {isLoadingVideoDetails || shuffledVideoQueue.length === 0 ? (
+              <p className="loading-message">
+                Loading video details and preparing playback queue... Please wait...
+              </p>
+            ) : (
+              <Video
+                key={currentVideo.id} // Key ensures re-mount of Video component when ID changes
+                ref={videoRef}
+                embedId={currentVideo.id}
+                startTime={startAtTime}
+                stopTime={dynamicStopTime}
+                onPlayerInitialized={handlePlayerInitialized}
+              />
+            )}
 
-        {/* Video List Section */}
-        <section id="video-list-section" style={{ marginTop: '30px', textAlign: 'center' }}>
-          <h3>Video List:</h3>
-          <ul style={{ listStyle: 'none', padding: 0 }}>
-            {videoList.map((video, index) => (
-              <li
-                key={video.id}
-                style={{
-                  padding: '5px',
-                  backgroundColor: currentVideo.id === video.id ? '#e0f7fa' : 'transparent',
-                  color: currentVideo.id === video.id ? '#007bff' : '#333',
-                  fontWeight: currentVideo.id === video.id ? 'bold' : 'normal',
-                  borderBottom: '1px solid #eee',
-                  cursor: 'default'
+            {/* Apply dynamic color to shotMessage */}
+            {shotMessage && <p className="shot-message" style={{ color: shotMessageColor }}>{shotMessage}</p>}
+          </section>
+
+          {/* Controls Section */}
+          <section id="controls-section">
+            <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady && !isLoadingVideoDetails} />
+
+            <div className="action-buttons-container">
+              <button
+                onClick={() => {
+                  if (isPlayerReady) {
+                    videoRef.current.seekTo(startAtTime, true);
+                    setShotMessage('');
+                    setShotMessageColor('#333'); // Reset message color on restart
+                    setDynamicStopTime(currentVideo.initialStopTime);
+                    setTimeout(() => {
+                      if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
+                        videoRef.current.playVideo();
+                      }
+                    }, 100);
+                  } else {
+                    console.warn("App.js: Video player methods not ready when Restart button clicked.");
+                    setShotMessage("Player not ready. Please wait a moment.");
+                    setShotMessageColor('#333'); // Default color if player not ready
+                  }
                 }}
+                className="action-button"
+                disabled={!isPlayerReady || isLoadingVideoDetails}
               >
-                {/* Display video title and URL (if available) */}
-                {video.videoUrl && `(URL: ${video.videoUrl})`}
-              </li>
-            ))}
-          </ul>
-        </section>
-      </main>
+                Restart Video
+              </button>
+              <button
+                onClick={handleNextVideo}
+                className="action-button"
+                disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0}
+              >
+                Next Video
+              </button>
+            </div>
+          </section>
+
+          {/* Video List Section (Conditionally Rendered) */}
+          {showVideoList && (
+            <section id="video-list-section">
+              <h3>Video List:</h3>
+              <ul className="video-list">
+                {videoList.map((video, index) => (
+                  <li
+                    key={video.id}
+                    className={`video-list-item ${currentVideo.id === video.id ? 'current-video' : ''}`}
+                  >
+                    {video.title} {video.videoUrl && `(URL: ${video.videoUrl})`}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </main>
+      )}
     </div>
   );
 }
 
-const buttonStyle = {
-  margin: '10px',
-  padding: '10px 20px',
-  fontSize: '20px',
-  fontWeight: 'bold',
-  cursor: 'pointer',
-  backgroundColor: 'rgba(249, 175, 73, 0.95)',
-  color: 'white',
-  border: 'none',
-  borderRadius: '8px',
-  boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-  transition: 'background-color 0.3s ease',
-};
-
+// buttonStyle constant is removed, styling handled via CSS classes
 export default App;

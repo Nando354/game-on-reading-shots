@@ -1,10 +1,12 @@
 /* src/components/YouTubeVideo.css */
 .video-responsive {
   overflow: hidden;
-  padding-bottom: 40%; /* 16:9 aspect ratio (height / width * 100) */
+  padding-bottom: 38.25%; /* Default 16:9 aspect ratio (height / width * 100) for large screens */
   position: relative;
-  height: 0;
-  background-color: blue;
+  /* Removed height: 0; to ensure container takes calculated height from padding-bottom */
+  background-color: black;
+  width: 100%; /* Ensure it takes full width of its container */
+  max-width: 1453px; /* Max width for the video player to match common video embeds */
 }
 
 .video-responsive iframe {
@@ -13,4 +15,24 @@
   height: 100%;
   width: 100%;
   position: absolute;
+}
+
+/* Media query for screens smaller than 1440px to make video taller */
+@media (max-width: 1439px) {
+  .video-responsive {
+    padding-bottom: 46%; /* Example: ~16:10 aspect ratio or slightly taller than 16:9 */
+  }
+}
+/* Media query for screens smaller than 1024px to make video even taller */
+@media (max-width: 1023px) {
+  .video-responsive {
+    padding-bottom: 58%; /* Example: ~16:9 aspect ratio or slightly taller than 16:9 */
+  }
+}
+
+/* Further adjustment for very small screens if needed, could make it even taller */
+@media (max-width: 600px) {
+  .video-responsive {
+    padding-bottom: 100%; /* Example: 4:3 aspect ratio on very small screens */
+  }
 }
