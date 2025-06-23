@@ -3,7 +3,6 @@ import Video from './components/Video';
 import './App.css';
 import './Video.css';
 import ShotButtons from './components/ShotButtons';
-// Removed Instructions import as its content is now directly in App.js
 
 // Utility function to shuffle an array (Fisher-Yates (Knuth) shuffle)
 const shuffleArray = (array) => {
@@ -23,8 +22,21 @@ const shuffleArray = (array) => {
 function App() {
   // State to control visibility of the instructions page
   const [showInstructions, setShowInstructions] = useState(true);
-  // New state to control visibility of the video list section
+  // State to control visibility of the video list section
   const [showVideoList, setShowVideoList] = useState(false); // Initially false
+  // State to control visibility of the hamburger menu dropdown
+  const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+
+  // States for button highlighting
+  const [highlightNextButton, setHighlightNextButton] = useState(false);
+  const [highlightRestartButton, setHighlightRestartButton] = useState(false);
+
+  // NEW: States for scoring
+  const [correctScores, setCorrectScores] = useState(0); // Counts correct answers for the first 10 unique videos
+  const [totalAttemptsTracked, setTotalAttemptsTracked] = useState(0); // Counts unique videos attempted, up to 10
+  // Stores whether a video has been attempted for scoring purposes in the current game cycle
+  const [videoAttemptStatus, setVideoAttemptStatus] = useState({}); // { videoId: true }
+
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
@@ -62,7 +74,6 @@ function App() {
 
   // Create a ref to access methods exposed by the Video component
   const videoRef = useRef(null);
-  // Removed videoSectionRef as it's no longer needed for scrolling from instructions
 
   // State to display the current player state
   const [playerState, setPlayerState] = useState('Not Ready');
@@ -177,11 +188,22 @@ function App() {
   // Function to handle a click on any ShotButton
   const handleShotButtonClick = useCallback((buttonText) => {
     if (isPlayerReady && videoRef.current) {
+      const videoId = currentVideo.id;
+      let isFirstAttemptForThisVideo = !videoAttemptStatus[videoId];
+
       if (buttonText === currentVideo.correctShot) {
         // Randomly select a correct message
         const randomIndex = Math.floor(Math.random() * correctMessages.length);
         setShotMessage(correctMessages[randomIndex]);
-        setShotMessageColor('green'); // Set color to green for correct answer
+        setShotMessageColor('rgba(18, 163, 5, 0.8)'); // Set color to green for correct answer
+        setHighlightNextButton(true); // Highlight Next Video button
+        setHighlightRestartButton(false); // Ensure Restart Video is not highlighted
+
+        if (isFirstAttemptForThisVideo && totalAttemptsTracked < 10) {
+          setCorrectScores(prev => prev + 1);
+          setTotalAttemptsTracked(prev => prev + 1);
+          setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
+        }
 
         const currentTime = videoRef.current.getCurrentTime();
         const newStopTime = currentTime + 3;
@@ -198,6 +220,13 @@ function App() {
         const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
         setShotMessage(incorrectMessages[randomIndex]);
         setShotMessageColor('red'); // Set color to red for incorrect answer
+        setHighlightRestartButton(true); // Highlight Restart Video button
+        setHighlightNextButton(false); // Ensure Next Video is not highlighted
+
+        if (isFirstAttemptForThisVideo && totalAttemptsTracked < 10) {
+          setTotalAttemptsTracked(prev => prev + 1);
+          setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
+        }
 
         videoRef.current.seekTo(startAtTime, true);
 
@@ -212,8 +241,10 @@ function App() {
       console.warn("App.js: Video player methods not ready when Shot Button clicked.");
       setShotMessage("Player not ready. Please wait a moment.");
       setShotMessageColor('#333'); // Default color if player not ready
+      setHighlightNextButton(false); // Reset in case of player not ready
+      setHighlightRestartButton(false); // Reset in case of player not ready
     }
-  }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor]);
+  }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, totalAttemptsTracked]);
 
 
   // Modified handleNextVideo to use a shuffled queue
@@ -229,12 +260,18 @@ function App() {
       console.log("App.js: End of shuffled queue reached. Reshuffling video list.");
       setShuffledVideoQueue(shuffleArray([...videoList])); // Shuffle the original full list
       nextIndex = 0; // Start from the beginning of the new shuffled list
+      // Reset scoring for a new game cycle
+      setCorrectScores(0);
+      setTotalAttemptsTracked(0);
+      setVideoAttemptStatus({});
     }
 
     setCurrentShuffledIndex(nextIndex);
     setShotMessage('');
     setShotMessageColor('#333'); // Reset message color
     setIsPlayerReady(false); // Reset readiness to trigger player re-initialization for the new video
+    setHighlightNextButton(false); // Reset highlight
+    setHighlightRestartButton(false); // Reset highlight
   }, [currentShuffledIndex, shuffledVideoQueue, videoList, setShotMessage, setIsPlayerReady, setShotMessageColor]);
 
 
@@ -242,6 +279,34 @@ function App() {
   const handleStartPlaying = useCallback(() => {
     setShowInstructions(false);
     setShowVideoList(false); // Ensure video list is hidden when starting to play
+    setHighlightNextButton(false); // Reset highlights on game start
+    setHighlightRestartButton(false); // Reset highlights on game start
+    // Reset scoring for a new game start
+    setCorrectScores(0);
+    setTotalAttemptsTracked(0);
+    setVideoAttemptStatus({});
+  }, []);
+
+  // General handler for navigation from hamburger menu
+  const handleNavigationClick = useCallback((target) => {
+    setShowHamburgerMenu(false); // Close menu on click
+    setHighlightNextButton(false); // Reset highlights on navigation
+    setHighlightRestartButton(false); // Reset highlights on navigation
+    // Reset scoring if navigating to another section (effectively starting a new game context)
+    setCorrectScores(0);
+    setTotalAttemptsTracked(0);
+    setVideoAttemptStatus({});
+
+    if (target === 'instructions') {
+      setShowInstructions(true);
+      setShowVideoList(false);
+    } else if (target === 'videoList') {
+      setShowVideoList(true);
+      setShowInstructions(false);
+    } else if (target === 'game') {
+      setShowInstructions(false);
+      setShowVideoList(false);
+    }
   }, []);
 
   // Effect to fetch video details dynamically for the list
@@ -349,6 +414,16 @@ function App() {
     fetchAndPopulateVideoDetails();
   }, [initialVideoList, videoList]); // Depend on initialVideoList to run once, and videoList for comparison
 
+  // Calculate score for display
+  const displayPercentage = totalAttemptsTracked > 0 ?
+    (totalAttemptsTracked >= 10 ?
+        ((correctScores / 10) * 100).toFixed(0) : // Score out of 10 if 10 attempts made
+        ((correctScores / totalAttemptsTracked) * 100).toFixed(0))
+    : 0;
+
+  const displayAttemptCount = totalAttemptsTracked >= 10 ? 10 : totalAttemptsTracked;
+  const displayCorrectCount = correctScores;
+
 
   return (
     <div className="App">
@@ -357,6 +432,24 @@ function App() {
           <h1>READ THE SHOT!</h1>
         </header>
       )}
+
+      {/* Hamburger Menu Container - Fixed position to float on all screens */}
+      <div
+        className="hamburger-menu-container"
+        onMouseEnter={() => setShowHamburgerMenu(true)}
+        onMouseLeave={() => setShowHamburgerMenu(false)}
+      >
+        <div className="hamburger-icon">
+          ☰ {/* Hamburger icon character */}
+        </div>
+        {showHamburgerMenu && (
+          <div className="dropdown-menu">
+            <div onClick={() => handleNavigationClick('instructions')}>Instructions</div>
+            <div onClick={() => handleNavigationClick('videoList')}>Video List</div>
+            <div onClick={() => handleNavigationClick('game')}>Game</div>
+          </div>
+        )}
+      </div>
 
       {showInstructions ? (
         // Instructions Page
@@ -379,7 +472,7 @@ function App() {
               </li>
               <li><strong>Restart or Next:</strong>
                 <ul className="action-list">
-                  <li>Click "Restart from Start Time" to re-watch the current video from the beginning of the action.</li>
+                  <li>Click "Restart Video" to re-watch the current video from the beginning of the action.</li>
                   <li>Click "Next Video" to move to the next video in the list.</li>
                 </ul>
               </li>
@@ -435,6 +528,8 @@ function App() {
                     setShotMessage('');
                     setShotMessageColor('#333'); // Reset message color on restart
                     setDynamicStopTime(currentVideo.initialStopTime);
+                    setHighlightRestartButton(false); // Reset highlight
+                    setHighlightNextButton(false); // Reset highlight
                     setTimeout(() => {
                       if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
                         videoRef.current.playVideo();
@@ -446,14 +541,23 @@ function App() {
                     setShotMessageColor('#333'); // Default color if player not ready
                   }
                 }}
-                className="action-button"
+                className={`action-button ${highlightRestartButton ? 'highlight-active' : ''}`}
                 disabled={!isPlayerReady || isLoadingVideoDetails}
               >
                 Restart Video
               </button>
+
+              {/* Score Display */}
+              {totalAttemptsTracked > 0 && ( // Display only if attempts have been made
+                  <p className="score-display">
+                      {totalAttemptsTracked < 10 ? "Score: " : "Final Score: "}
+                      {displayPercentage}% ({displayCorrectCount}/{displayAttemptCount})
+                  </p>
+              )}
+
               <button
                 onClick={handleNextVideo}
-                className="action-button"
+                className={`action-button ${highlightNextButton ? 'highlight-active' : ''}`}
                 disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0}
               >
                 Next Video
@@ -483,5 +587,4 @@ function App() {
   );
 }
 
-// buttonStyle constant is removed, styling handled via CSS classes
 export default App;

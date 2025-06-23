@@ -33,6 +33,6 @@
 /* Further adjustment for very small screens if needed, could make it even taller */
 @media (max-width: 600px) {
   .video-responsive {
-    padding-bottom: 100%; /* Example: 4:3 aspect ratio on very small screens */
+    padding-bottom: 110%; /* Example: 4:3 aspect ratio on very small screens */
   }
 }
