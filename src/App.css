@@ -53,9 +53,9 @@ html, body, #root {
   background-color: #f9f9f9;
   padding: var(--main-content-padding);
   box-sizing: border-box;
-  text-align: center; /* Center text within content box */
-  max-width: 100vw; /* Ensure it doesn't overflow horizontally */
-  overflow-y: auto; /* Allow scrolling if content is too tall on small screens */
+  text-align: center;
+  max-width: 100vw;
+  overflow-y: auto;
 }
 
 .instructions-content {
@@ -95,7 +95,8 @@ html, body, #root {
 }
 
 .start-button {
-  margin-top: 30px;
+  margin-top: 10px;
+  margin-bottom: 15px;
   padding: var(--button-padding);
   font-size: clamp(1.2rem, 3vw, 1.5rem); /* Responsive font size for start button */
   font-weight: bold;
@@ -248,7 +249,7 @@ section {
   background-color: rgba(210, 105, 30, 0.8); /* Even darker on hover */
 }
 
-/* NEW: Styles for Score Display */
+/* Styles for Score Display */
 .score-display {
   font-size: clamp(0.9rem, 2.5vw, 1.2rem); /* Responsive font size */
   font-weight: bold;
@@ -593,4 +594,75 @@ section {
   .dropdown-menu div {
     padding: 8px 15px;
   }
+}
+
+/* Styles for the Score Modal */
+.score-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7); /* Dark overlay */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 2000; /* Above all other content */
+}
+
+.score-modal-content {
+  background-color: white;
+  padding: 40px 30px;
+  border-radius: 10px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  max-width: 90%;
+  width: 400px; /* Fixed width for the modal content */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px; /* Space between elements */
+}
+
+.score-modal-content h2 {
+  font-size: clamp(1.8rem, 5vw, 2.5rem);
+  color: #333;
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.score-modal-content p {
+  font-size: clamp(1.1rem, 3vw, 1.4rem);
+  color: #555;
+  margin: 5px 0;
+}
+
+.score-modal-content .final-score {
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: bold;
+  color: #0eef6c; /* Green color for final score */
+  background-color: black;
+  padding: 10px 20px;
+  border-radius: 8px;
+  width: fit-content;
+  margin: 15px auto; /* Center the score text itself */
+}
+
+.modal-restart-button {
+  padding: var(--button-padding);
+  font-size: var(--button-base-font-size);
+  font-weight: bold;
+  cursor: pointer;
+  background-color: rgba(249, 175, 73, 0.95); /* Orange color */
+  color: white;
+  border: none;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  width: 80%; /* Make button take up more width in modal */
+  max-width: 250px;
+}
+
+.modal-restart-button:hover {
+  background-color: rgba(249, 175, 73, 0.8);
 }

@@ -31,11 +31,15 @@ function App() {
   const [highlightNextButton, setHighlightNextButton] = useState(false);
   const [highlightRestartButton, setHighlightRestartButton] = useState(false);
 
-  // NEW: States for scoring
+  // States for scoring
   const [correctScores, setCorrectScores] = useState(0); // Counts correct answers for the first 10 unique videos
-  const [totalAttemptsTracked, setTotalAttemptsTracked] = useState(0); // Counts unique videos attempted, up to 10
+  const [totalAttemptsTracked, setTotalAttemptsTracked] = useState(0); // Counts unique videos presented, up to 10
   // Stores whether a video has been attempted for scoring purposes in the current game cycle
   const [videoAttemptStatus, setVideoAttemptStatus] = useState({}); // { videoId: true }
+  // State for showing the score modal
+  const [showScoreModal, setShowScoreModal] = useState(false);
+  // NEW: State to track if the 10th video has been attempted (answered)
+  const [hasTenthVideoBeenAttempted, setHasTenthVideoBeenAttempted] = useState(false);
 
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
@@ -54,8 +58,18 @@ function App() {
     { id: "trV2xBDevf8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.0, initialStopTime: 6.59 },
     { id: "jJ3o8WQwxgs", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 0.0, initialStopTime: 2.05 },
     { id: "Nf39ym_abvo", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 5.0, initialStopTime: 9.23 },
-    { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 16.0, initialStopTime: 21.17 },
-    { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 }
+    { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 16.0, initialStopTime: 21.17 },
+    { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 },
+    { id: "NWG9NfrZfO0", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.95 },
+    { id: "IVL0y1nhV1k", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.47 },
+    { id: "/lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
+    { id: "d2n2RIqJP88", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 6.0, initialStopTime: 10.18 },
+    { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 6.0, initialStopTime: 11.60 },
+    { id: "kgiwsnvAWuk", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.72 },
+    { id: "SQMNDCkhJwI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.19 },
+    { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 9.0, initialStopTime: 14.45 },
+    { id: "2J46Jd3lz_k", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 4.0, initialStopTime: 7.69 },
+    { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 }
   ], []);
 
   // State to hold the fully populated video list (with titles/URLs fetched)
@@ -121,7 +135,7 @@ function App() {
     }
   }, [videoList, shuffledVideoQueue.length]); // Depend on videoList and shuffledQueue.length
 
-  // Update currentVideo details (start/stop times) when the shuffled index changes
+  // Update currentVideo details (start/stop times) and totalAttemptsTracked when the shuffled index changes
   useEffect(() => {
     // Ensure the queue is not empty and the index is valid
     if (shuffledVideoQueue.length > 0 && currentShuffledIndex < shuffledVideoQueue.length) {
@@ -130,6 +144,10 @@ function App() {
       setDynamicStopTime(selectedVideo.initialStopTime);
       setIsPlayerReady(false); // Reset readiness for the new video to trigger re-initialization in Video.jsx
       console.log(`App.js: Current video updated to ID: ${selectedVideo.id}, Start: ${selectedVideo.initialStartTime}, Stop: ${selectedVideo.initialStopTime}`);
+
+      // Increment totalAttemptsTracked here, reflecting videos presented, capped at 10
+      // This is for display purposes as soon as the video is loaded.
+      setTotalAttemptsTracked(Math.min(currentShuffledIndex + 1, 10));
     }
   }, [currentShuffledIndex, shuffledVideoQueue]);
 
@@ -187,64 +205,83 @@ function App() {
 
   // Function to handle a click on any ShotButton
   const handleShotButtonClick = useCallback((buttonText) => {
-    if (isPlayerReady && videoRef.current) {
-      const videoId = currentVideo.id;
-      let isFirstAttemptForThisVideo = !videoAttemptStatus[videoId];
-
-      if (buttonText === currentVideo.correctShot) {
-        // Randomly select a correct message
-        const randomIndex = Math.floor(Math.random() * correctMessages.length);
-        setShotMessage(correctMessages[randomIndex]);
-        setShotMessageColor('rgba(18, 163, 5, 0.8)'); // Set color to green for correct answer
-        setHighlightNextButton(true); // Highlight Next Video button
-        setHighlightRestartButton(false); // Ensure Restart Video is not highlighted
-
-        if (isFirstAttemptForThisVideo && totalAttemptsTracked < 10) {
-          setCorrectScores(prev => prev + 1);
-          setTotalAttemptsTracked(prev => prev + 1);
-          setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
-        }
-
-        const currentTime = videoRef.current.getCurrentTime();
-        const newStopTime = currentTime + 3;
-        setDynamicStopTime(newStopTime);
-
-        setTimeout(() => {
-          if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-            videoRef.current.playVideo();
-          }
-        }, 200);
-
-      } else {
-        // Randomly select an incorrect message
-        const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
-        setShotMessage(incorrectMessages[randomIndex]);
-        setShotMessageColor('red'); // Set color to red for incorrect answer
-        setHighlightRestartButton(true); // Highlight Restart Video button
-        setHighlightNextButton(false); // Ensure Next Video is not highlighted
-
-        if (isFirstAttemptForThisVideo && totalAttemptsTracked < 10) {
-          setTotalAttemptsTracked(prev => prev + 1);
-          setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
-        }
-
-        videoRef.current.seekTo(startAtTime, true);
-
-        setTimeout(() => {
-          if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-            videoRef.current.playVideo();
-          }
-        }, 200);
-        setDynamicStopTime(currentVideo.initialStopTime);
-      }
-    } else {
+    if (!isPlayerReady || !videoRef.current) {
       console.warn("App.js: Video player methods not ready when Shot Button clicked.");
       setShotMessage("Player not ready. Please wait a moment.");
-      setShotMessageColor('#333'); // Default color if player not ready
-      setHighlightNextButton(false); // Reset in case of player not ready
-      setHighlightRestartButton(false); // Reset in case of player not ready
+      setShotMessageColor('#333');
+      setHighlightNextButton(false);
+      setHighlightRestartButton(false);
+      return; // Exit early if player is not ready
+    }
+
+    const videoId = currentVideo.id;
+    const isFirstAttemptForThisVideo = !videoAttemptStatus[videoId];
+
+    // --- Scoring Logic (for correctScores) ---
+    // Only increment correctScores if this is the first attempt on THIS unique video
+    if (isFirstAttemptForThisVideo) {
+      if (buttonText === currentVideo.correctShot) {
+        setCorrectScores(prev => prev + 1);
+      }
+      setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true })); // Mark this video as attempted for scoring
+
+      // NEW: If this is the 10th video's first attempt, mark it for modal display later
+      if (totalAttemptsTracked === 10) {
+        setHasTenthVideoBeenAttempted(true);
+      }
+    }
+
+    // --- Feedback and Video Playback Logic ---
+    if (buttonText === currentVideo.correctShot) {
+      const randomIndex = Math.floor(Math.random() * correctMessages.length);
+      setShotMessage(correctMessages[randomIndex]);
+      setShotMessageColor('green');
+      setHighlightNextButton(true);
+      setHighlightRestartButton(false);
+
+      const currentTime = videoRef.current.getCurrentTime();
+      const newStopTimeForPlayback = currentTime + 3; // Video will play for 3 more seconds
+      setDynamicStopTime(newStopTimeForPlayback);
+
+      setTimeout(() => {
+        if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
+          videoRef.current.playVideo();
+        }
+      }, 200);
+
+      // Modal logic for correct answers on 10th video is handled by handleVideoPausedForModalCheck
+    } else { // Incorrect answer
+      const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
+      setShotMessage(incorrectMessages[randomIndex]);
+      setShotMessageColor('red');
+      setHighlightRestartButton(true);
+      setHighlightNextButton(false);
+
+      videoRef.current.seekTo(startAtTime, true);
+      setTimeout(() => {
+        if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
+          videoRef.current.playVideo();
+        }
+      }, 200);
+      setDynamicStopTime(currentVideo.initialStopTime); // Reset stop time
+
+      // NEW: If it's the 10th video and incorrect, mark it for modal display later
+      // The modal will then be triggered by handleVideoPausedForModalCheck after the video resets and pauses.
+      if (totalAttemptsTracked === 10) {
+        setHasTenthVideoBeenAttempted(true);
+      }
     }
   }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, totalAttemptsTracked]);
+
+  // Callback for when the video pauses/ends due to stop time or natural end
+  const handleVideoPausedForModalCheck = useCallback(() => {
+    // NEW: Only show the modal if the 10th video has been attempted and is now paused/ended
+    // This is the single entry point for showing the modal after an attempt on the 10th video.
+    if (totalAttemptsTracked === 10 && hasTenthVideoBeenAttempted) {
+        setShowScoreModal(true);
+        setHasTenthVideoBeenAttempted(false); // Reset for next game cycle
+    }
+}, [totalAttemptsTracked, hasTenthVideoBeenAttempted]);
 
 
   // Modified handleNextVideo to use a shuffled queue
@@ -260,10 +297,7 @@ function App() {
       console.log("App.js: End of shuffled queue reached. Reshuffling video list.");
       setShuffledVideoQueue(shuffleArray([...videoList])); // Shuffle the original full list
       nextIndex = 0; // Start from the beginning of the new shuffled list
-      // Reset scoring for a new game cycle
-      setCorrectScores(0);
-      setTotalAttemptsTracked(0);
-      setVideoAttemptStatus({});
+      // Note: Score reset logic is now handled by the modal's restart button or game start button
     }
 
     setCurrentShuffledIndex(nextIndex);
@@ -283,9 +317,14 @@ function App() {
     setHighlightRestartButton(false); // Reset highlights on game start
     // Reset scoring for a new game start
     setCorrectScores(0);
-    setTotalAttemptsTracked(0);
-    setVideoAttemptStatus({});
-  }, []);
+    setTotalAttemptsTracked(0); // Reset total videos tracked
+    setVideoAttemptStatus({}); // Reset status of videos attempted for scoring
+    setShowScoreModal(false); // Ensure modal is hidden
+    setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
+    // Reshuffle for a new game every time "Start Playing" is clicked
+    setShuffledVideoQueue(shuffleArray([...videoList]));
+    setCurrentShuffledIndex(0);
+  }, [videoList]);
 
   // General handler for navigation from hamburger menu
   const handleNavigationClick = useCallback((target) => {
@@ -296,6 +335,8 @@ function App() {
     setCorrectScores(0);
     setTotalAttemptsTracked(0);
     setVideoAttemptStatus({});
+    setShowScoreModal(false); // Ensure modal is hidden
+    setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
 
     if (target === 'instructions') {
       setShowInstructions(true);
@@ -306,8 +347,46 @@ function App() {
     } else if (target === 'game') {
       setShowInstructions(false);
       setShowVideoList(false);
+      // Ensure game is ready to play if navigating directly to it
+      if (shuffledVideoQueue.length === 0) {
+        setShuffledVideoQueue(shuffleArray([...videoList]));
+        setCurrentShuffledIndex(0);
+      }
     }
-  }, []);
+  }, [shuffledVideoQueue.length, videoList]);
+
+  // Function to restart the game from the modal
+  const handleRestartGame = useCallback(() => {
+    setCorrectScores(0);
+    setTotalAttemptsTracked(0);
+    setVideoAttemptStatus({});
+    setShuffledVideoQueue(shuffleArray([...videoList])); // Reshuffle for a new game
+    setCurrentShuffledIndex(0); // Start from the first video
+    setShotMessage('');
+    setShotMessageColor('#333');
+    setIsPlayerReady(false);
+    setHighlightNextButton(false);
+    setHighlightRestartButton(false);
+    setShowScoreModal(false); // Hide the modal
+    setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
+
+    // Ensure the video player is loaded and ready for the first video of the new game
+    // The useEffect that updates currentVideo will handle setting startAtTime/dynamicStopTime
+    // and setting setIsPlayerReady(false), which will trigger Video.jsx to re-initialize.
+    // A small delay might be good here to ensure the UI updates before the video tries to play
+    if (videoRef.current) {
+        setTimeout(() => {
+            // Attempt to play only if player is truly ready after re-initialization
+            if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
+                // Access the initialStartTime of the first video in the NEW shuffled queue
+                const firstVideoOfNewGame = shuffledVideoQueue[0] || initialVideoList[0];
+                videoRef.current.seekTo(firstVideoOfNewGame.initialStartTime, true);
+                videoRef.current.playVideo();
+            }
+        }, 500); // Give React and the Video component a moment to process the new video
+    }
+
+  }, [videoList, initialVideoList, shuffledVideoQueue]); // Added shuffledVideoQueue to dependencies for initialSeek
 
   // Effect to fetch video details dynamically for the list
   useEffect(() => {
@@ -416,12 +495,10 @@ function App() {
 
   // Calculate score for display
   const displayPercentage = totalAttemptsTracked > 0 ?
-    (totalAttemptsTracked >= 10 ?
-        ((correctScores / 10) * 100).toFixed(0) : // Score out of 10 if 10 attempts made
-        ((correctScores / totalAttemptsTracked) * 100).toFixed(0))
+    ((correctScores / 10) * 100).toFixed(0) // Always calculate out of 10
     : 0;
 
-  const displayAttemptCount = totalAttemptsTracked >= 10 ? 10 : totalAttemptsTracked;
+  // The numerator for the X/10 display is correctScores
   const displayCorrectCount = correctScores;
 
 
@@ -455,6 +532,18 @@ function App() {
         // Instructions Page
         <section id="instructions-page">
           <div className="instructions-content">
+            <button
+              onClick={handleStartPlaying}
+              className="start-button"
+              disabled={isLoadingVideoDetails} // Disable if videos are still loading
+            >
+              {isLoadingVideoDetails ? 'Loading Videos...' : 'Start Playing!'}
+            </button>
+            {isLoadingVideoDetails && (
+              <p className="loading-instructions-message">
+                (Please wait for videos to load)
+              </p>
+            )}
             <h2 className="instructions-title">How to Use This App:</h2>
             <p className="instructions-text">
               Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
@@ -476,19 +565,15 @@ function App() {
                   <li>Click "Next Video" to move to the next video in the list.</li>
                 </ul>
               </li>
+              <li><strong>Score Tracking:</strong> 
+                <ul className="action-list">
+                  <li>Your score will be tracked over the first 10 unique videos and shots you attempt to read.</li>
+                  <li>Your score is only tracked on your first attempt any subsequent video restarts will not be counted towards your points</li>
+                  <li>After 10 attempts, your final score will be displayed, and you can choose to play again!</li>
+                </ul>
+              </li>
             </ol>
-            <button
-              onClick={handleStartPlaying}
-              className="start-button"
-              disabled={isLoadingVideoDetails} // Disable if videos are still loading
-            >
-              {isLoadingVideoDetails ? 'Loading Videos...' : 'Start Playing!'}
-            </button>
-            {isLoadingVideoDetails && (
-              <p className="loading-instructions-message">
-                (Please wait for videos to load)
-              </p>
-            )}
+            
           </div>
         </section>
       ) : (
@@ -509,6 +594,7 @@ function App() {
                 startTime={startAtTime}
                 stopTime={dynamicStopTime}
                 onPlayerInitialized={handlePlayerInitialized}
+                onVideoPausedForStopTime={handleVideoPausedForModalCheck}
               />
             )}
 
@@ -547,18 +633,17 @@ function App() {
                 Restart Video
               </button>
 
-              {/* Score Display */}
-              {totalAttemptsTracked > 0 && ( // Display only if attempts have been made
+              {/* Score Display - Display only if attempts have been made AND modal is NOT visible */}
+              {totalAttemptsTracked > 0 && !showScoreModal && (
                   <p className="score-display">
-                      {totalAttemptsTracked < 10 ? "Score: " : "Final Score: "}
-                      {displayPercentage}% ({displayCorrectCount}/{displayAttemptCount})
+                      SCORE: {displayPercentage}% - VIDEO ({totalAttemptsTracked}/10)
                   </p>
               )}
 
               <button
                 onClick={handleNextVideo}
                 className={`action-button ${highlightNextButton ? 'highlight-active' : ''}`}
-                disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0}
+                disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0 || showScoreModal}
               >
                 Next Video
               </button>
@@ -580,6 +665,23 @@ function App() {
                 ))}
               </ul>
             </section>
+          )}
+
+          {/* Score Modal */}
+          {showScoreModal && (
+            <div className="score-modal-overlay">
+              <div className="score-modal-content">
+                <h2>Game Over!</h2>
+                <p>Your Final Score:</p>
+                <p className="final-score">{displayCorrectCount}/10 ({displayPercentage}%)</p> {/* Changed display to X/10 */}
+                <button
+                  onClick={handleRestartGame}
+                  className="modal-restart-button"
+                >
+                  Play Again!
+                </button>
+              </div>
+            </div>
           )}
         </main>
       )}
