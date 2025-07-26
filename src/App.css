@@ -6,7 +6,8 @@
   --button-base-font-size: 1.2rem;
   --button-padding: 10px 20px;
   --main-content-padding: 20px;
-  --darker-orange-active: rgba(210, 105, 30, 0.95); /* New variable for darker orange */
+  --red-active: rgba(233, 10, 21, 0.95); /* Darker orange for active buttons */
+  /* --darker-orange-active: rgba(210, 105, 30, 0.95); New variable for darker orange */
 }
 
 html, body, #root {
@@ -240,7 +241,7 @@ section {
 
 /* Highlight style for action buttons */
 .action-button.highlight-active {
-  background-color: var(--darker-orange-active); /* Apply darker orange */
+  background-color: var(--red-active); /* Apply darker orange */
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2); /* More prominent shadow */
   transform: translateY(-2px); /* Slight lift */
 }

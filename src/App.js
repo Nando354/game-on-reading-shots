@@ -62,14 +62,16 @@ function App() {
     { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 },
     { id: "NWG9NfrZfO0", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.95 },
     { id: "IVL0y1nhV1k", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.47 },
-    { id: "/lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
+    { id: "lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
     { id: "d2n2RIqJP88", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 6.0, initialStopTime: 10.18 },
     { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 6.0, initialStopTime: 11.60 },
     { id: "kgiwsnvAWuk", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.72 },
     { id: "SQMNDCkhJwI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.19 },
     { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 9.0, initialStopTime: 14.45 },
     { id: "2J46Jd3lz_k", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 4.0, initialStopTime: 7.69 },
-    { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 }
+    { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 },
+    { id: "p-zaS41MFyQ", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 4.0, initialStopTime: 7.71 },
+    { id: "2mUUc3scIyY", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 9.0, initialStopTime: 15.59 }
   ], []);
 
   // State to hold the fully populated video list (with titles/URLs fetched)
@@ -123,6 +125,117 @@ function App() {
 
   // State to track if video details are being loaded (e.g., titles from YouTube API)
   const [isLoadingVideoDetails, setIsLoadingVideoDetails] = useState(true);
+
+  // Ref for background music
+  const backgroundMusicRef = useRef(null);
+  // Refs for sound effects
+  const applauseSoundRef = useRef(null);
+  const awwSoundRef = useRef(null);
+
+  // Effect to fetch video details dynamically for the list
+  useEffect(() => {
+    const fetchAndPopulateVideoDetails = async () => {
+      setIsLoadingVideoDetails(true);
+      const updatedVideoList = [...initialVideoList]; // Use initialVideoList as base
+
+      for (let i = 0; i < updatedVideoList.length; i++) {
+        const video = updatedVideoList[i];
+        // Only fetch if title is still "Loading title..." or if videoUrl is null
+        if (video.title === "Loading title..." || video.videoUrl === null) {
+          let tempPlayer = null;
+          let tempDiv = null;
+
+          try {
+            tempDiv = document.createElement('div');
+            tempDiv.style.position = 'absolute';
+            tempDiv.style.left = '-9999px';
+            tempDiv.style.top = '-9999px';
+            document.body.appendChild(tempDiv);
+
+            const playerReadyPromise = new Promise((resolve, reject) => {
+              let attempts = 0;
+              const maxAttempts = 50;
+
+              const createTempPlayer = () => {
+                const tempIframe = tempDiv.querySelector('iframe');
+                if (window.YT && window.YT.Player && tempIframe && tempIframe.contentWindow) {
+                  tempPlayer = new window.YT.Player(tempIframe, {
+                    videoId: video.id,
+                    playerVars: {
+                      controls: 0, autoplay: 0, mute: 1, enablejsapi: 1,
+                    },
+                    events: {
+                      'onReady': (event) => resolve(event.target),
+                      'onError': (error) => {
+                        console.error("App.js: Temporary player error for ID:", video.id, error);
+                        reject(new Error(`Failed to load video ${error.data}`));
+                      },
+                    },
+                  });
+                } else {
+                  attempts++;
+                  if (attempts < maxAttempts) {
+                    setTimeout(createTempPlayer, 100);
+                  } else {
+                    reject(new Error("Timeout: YouTube API or temporary iframe not ready for video details."));
+                  }
+                }
+              };
+
+              const newIframe = document.createElement('iframe');
+              newIframe.id = `temp-yt-player-${video.id}-${Date.now()}`;
+              newIframe.width = '1';
+              newIframe.height = '1';
+              // Ensure HTTPS for the temporary iframe as well
+              newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1`;
+              newIframe.style.border = 'none';
+              tempDiv.appendChild(newIframe);
+
+              createTempPlayer();
+            });
+
+            const loadedPlayer = await playerReadyPromise;
+            const videoData = loadedPlayer.getVideoData();
+            const videoUrl = loadedPlayer.getVideoUrl();
+
+            if (!videoData || !videoData.title) {
+              throw new Error("Could not retrieve video title from API.");
+            }
+
+            updatedVideoList[i] = {
+              ...video,
+              title: videoData.title,
+              videoUrl: videoUrl,
+              initialStopTime: videoData.duration ? Math.min(video.initialStopTime, videoData.duration) : video.initialStopTime,
+            };
+
+          } catch (error) {
+            console.error(`Error fetching details for video ID ${video.id}:`, error);
+            updatedVideoList[i] = {
+              ...video,
+              title: `Error loading: ${error.message || 'Unknown error'}`,
+              videoUrl: `https://www.youtube.com/watch?v=${video.id}`
+            };
+          } finally {
+            if (tempPlayer && typeof tempPlayer.destroy === 'function') {
+                try { tempPlayer.destroy(); } catch (e) { console.warn("Error destroying temp player:", e); }
+            }
+            if (tempDiv && tempDiv.parentNode) {
+                tempDiv.parentNode.removeChild(tempDiv);
+            }
+          }
+        }
+      }
+      // Only update state if the list has actually changed to prevent unnecessary re-renders
+      // This helps avoid re-triggering effects unnecessarily.
+      if (JSON.stringify(updatedVideoList) !== JSON.stringify(videoList)) {
+        setVideoList(updatedVideoList);
+      }
+      setIsLoadingVideoDetails(false);
+    };
+
+    fetchAndPopulateVideoDetails();
+  }, [initialVideoList, videoList]); // Depend on initialVideoList to run once, and videoList for comparison
 
   // Initialize shuffled queue when videoList is populated
   useEffect(() => {
@@ -214,6 +327,13 @@ function App() {
       return; // Exit early if player is not ready
     }
 
+    // Stop all sound effects before playing a new one
+    if (applauseSoundRef.current) applauseSoundRef.current.pause();
+    if (awwSoundRef.current) awwSoundRef.current.pause();
+    if (applauseSoundRef.current) applauseSoundRef.current.currentTime = 0;
+    if (awwSoundRef.current) awwSoundRef.current.currentTime = 0;
+
+
     const videoId = currentVideo.id;
     const isFirstAttemptForThisVideo = !videoAttemptStatus[videoId];
 
@@ -239,6 +359,10 @@ function App() {
       setHighlightNextButton(true);
       setHighlightRestartButton(false);
 
+      if (applauseSoundRef.current) {
+        applauseSoundRef.current.play().catch(e => console.error("Error playing applause sound:", e));
+      }
+
       const currentTime = videoRef.current.getCurrentTime();
       const newStopTimeForPlayback = currentTime + 3; // Video will play for 3 more seconds
       setDynamicStopTime(newStopTimeForPlayback);
@@ -256,6 +380,10 @@ function App() {
       setShotMessageColor('red');
       setHighlightRestartButton(true);
       setHighlightNextButton(false);
+
+      if (awwSoundRef.current) {
+        awwSoundRef.current.play().catch(e => console.error("Error playing aww sound:", e));
+      }
 
       videoRef.current.seekTo(startAtTime, true);
       setTimeout(() => {
@@ -388,110 +516,21 @@ function App() {
 
   }, [videoList, initialVideoList, shuffledVideoQueue]); // Added shuffledVideoQueue to dependencies for initialSeek
 
-  // Effect to fetch video details dynamically for the list
+  // Effect to control background music playback
   useEffect(() => {
-    const fetchAndPopulateVideoDetails = async () => {
-      setIsLoadingVideoDetails(true);
-      const updatedVideoList = [...initialVideoList]; // Use initialVideoList as base
-
-      for (let i = 0; i < updatedVideoList.length; i++) {
-        const video = updatedVideoList[i];
-        // Only fetch if title is still "Loading title..." or if videoUrl is null
-        if (video.title === "Loading title..." || video.videoUrl === null) {
-          let tempPlayer = null;
-          let tempDiv = null;
-
-          try {
-            tempDiv = document.createElement('div');
-            tempDiv.style.position = 'absolute';
-            tempDiv.style.left = '-9999px';
-            tempDiv.style.top = '-9999px';
-            document.body.appendChild(tempDiv);
-
-            const playerReadyPromise = new Promise((resolve, reject) => {
-              let attempts = 0;
-              const maxAttempts = 50;
-
-              const createTempPlayer = () => {
-                const tempIframe = tempDiv.querySelector('iframe');
-                if (window.YT && window.YT.Player && tempIframe && tempIframe.contentWindow) {
-                  tempPlayer = new window.YT.Player(tempIframe, {
-                    videoId: video.id,
-                    playerVars: {
-                      controls: 0, autoplay: 0, mute: 1, enablejsapi: 1,
-                    },
-                    events: {
-                      'onReady': (event) => resolve(event.target),
-                      'onError': (error) => {
-                        console.error("App.js: Temporary player error for ID:", video.id, error);
-                        reject(new Error(`Failed to load video ${error.data}`));
-                      },
-                    },
-                  });
-                } else {
-                  attempts++;
-                  if (attempts < maxAttempts) {
-                    setTimeout(createTempPlayer, 100);
-                  } else {
-                    reject(new Error("Timeout: YouTube API or temporary iframe not ready for video details."));
-                  }
-                }
-              };
-
-              const newIframe = document.createElement('iframe');
-              newIframe.id = `temp-yt-player-${video.id}-${Date.now()}`;
-              newIframe.width = '1';
-              newIframe.height = '1';
-              // Ensure HTTPS for the temporary iframe as well
-              newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1`;
-              newIframe.style.border = 'none';
-              tempDiv.appendChild(newIframe);
-
-              createTempPlayer();
-            });
-
-            const loadedPlayer = await playerReadyPromise;
-            const videoData = loadedPlayer.getVideoData();
-            const videoUrl = loadedPlayer.getVideoUrl();
-
-            if (!videoData || !videoData.title) {
-              throw new Error("Could not retrieve video title from API.");
-            }
-
-            updatedVideoList[i] = {
-              ...video,
-              title: videoData.title,
-              videoUrl: videoUrl,
-              initialStopTime: videoData.duration ? Math.min(video.initialStopTime, videoData.duration) : video.initialStopTime,
-            };
-
-          } catch (error) {
-            console.error(`Error fetching details for video ID ${video.id}:`, error);
-            updatedVideoList[i] = {
-              ...video,
-              title: `Error loading: ${error.message || 'Unknown error'}`,
-              videoUrl: `https://www.youtube.com/watch?v=${video.id}`
-            };
-          } finally {
-            if (tempPlayer && typeof tempPlayer.destroy === 'function') {
-                try { tempPlayer.destroy(); } catch (e) { console.warn("Error destroying temp player:", e); }
-            }
-            if (tempDiv && tempDiv.parentNode) {
-                tempDiv.parentNode.removeChild(tempDiv);
-            }
-          }
-        }
+    if (backgroundMusicRef.current) {
+      if (!showInstructions && !showScoreModal) {
+        // Play music when game starts and modal is not visible
+        backgroundMusicRef.current.loop = true;
+        backgroundMusicRef.current.play().catch(e => console.error("Error playing music:", e));
+      } else {
+        // Pause music when instructions are shown or modal is visible
+        backgroundMusicRef.current.pause();
+        // Optionally reset to start for next play
+        backgroundMusicRef.current.currentTime = 0; 
       }
-      // Only update state if the list has actually changed to prevent unnecessary re-renders
-      // This helps avoid re-triggering effects unnecessarily.
-      if (JSON.stringify(updatedVideoList) !== JSON.stringify(videoList)) {
-        setVideoList(updatedVideoList);
-      }
-      setIsLoadingVideoDetails(false);
-    };
-
-    fetchAndPopulateVideoDetails();
-  }, [initialVideoList, videoList]); // Depend on initialVideoList to run once, and videoList for comparison
+    }
+  }, [showInstructions, showScoreModal]); // Dependencies for music control
 
   // Calculate score for display
   const displayPercentage = totalAttemptsTracked > 0 ?
@@ -504,6 +543,12 @@ function App() {
 
   return (
     <div className="App">
+      {/* Audio element for background music */}
+      <audio ref={backgroundMusicRef} src="/Alan Walker - Fade.mp3" preload="auto" />
+      {/* Audio elements for sound effects */}
+      <audio ref={applauseSoundRef} src="/applause-108368.mp3" preload="auto" />
+      <audio ref={awwSoundRef} src="/aww-8277.mp3" preload="auto" />
+
       {showInstructions && (
         <header className="App-header">
           <h1>READ THE SHOT!</h1>
