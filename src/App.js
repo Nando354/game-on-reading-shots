@@ -41,6 +41,9 @@ function App() {
   // NEW: State to track if the 10th video has been attempted (answered)
   const [hasTenthVideoBeenAttempted, setHasTenthVideoBeenAttempted] = useState(false);
 
+  // NEW: State to track the current game level (e.g., 'beginner', 'advanced')
+  const [gameLevel, setGameLevel] = useState('none'); // 'none', 'beginner', 'advanced'
+
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
@@ -438,7 +441,9 @@ function App() {
 
 
   // Handler for "Start Playing!" button in instructions
-  const handleStartPlaying = useCallback(() => {
+  // Modified to accept gameLevel
+  const handleStartPlaying = useCallback((level) => {
+    setGameLevel(level); // Set the selected game level
     setShowInstructions(false);
     setShowVideoList(false); // Ensure video list is hidden when starting to play
     setHighlightNextButton(false); // Reset highlights on game start
@@ -465,6 +470,7 @@ function App() {
     setVideoAttemptStatus({});
     setShowScoreModal(false); // Ensure modal is hidden
     setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
+    setGameLevel('none'); // Reset game level when navigating away from game play
 
     if (target === 'instructions') {
       setShowInstructions(true);
@@ -480,8 +486,12 @@ function App() {
         setShuffledVideoQueue(shuffleArray([...videoList]));
         setCurrentShuffledIndex(0);
       }
+      // If navigating to game directly, ensure a level is set, default to beginner if none
+      if (gameLevel === 'none') {
+        setGameLevel('beginner');
+      }
     }
-  }, [shuffledVideoQueue.length, videoList]);
+  }, [shuffledVideoQueue.length, videoList, gameLevel]);
 
   // Function to restart the game from the modal
   const handleRestartGame = useCallback(() => {
@@ -577,13 +587,24 @@ function App() {
         // Instructions Page
         <section id="instructions-page">
           <div className="instructions-content">
-            <button
-              onClick={handleStartPlaying}
-              className="start-button"
-              disabled={isLoadingVideoDetails} // Disable if videos are still loading
-            >
-              {isLoadingVideoDetails ? 'Loading Videos...' : 'Start Playing!'}
-            </button>
+            {/* Level Selection Buttons */}
+            <div className="level-selection-container">
+              <button
+                onClick={() => handleStartPlaying('beginner')}
+                className="start-button"
+                disabled={isLoadingVideoDetails}
+              >
+                {isLoadingVideoDetails ? 'Loading Videos...' : 'Beginner Level'}
+              </button>
+              <button
+                onClick={() => handleStartPlaying('advanced')}
+                className="start-button advanced-button"
+                disabled={isLoadingVideoDetails}
+              >
+                {isLoadingVideoDetails ? 'Loading Videos...' : 'Advanced Level'}
+              </button>
+            </div>
+            
             {isLoadingVideoDetails && (
               <p className="loading-instructions-message">
                 (Please wait for videos to load)

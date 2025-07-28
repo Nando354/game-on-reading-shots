@@ -95,9 +95,23 @@ html, body, #root {
   padding-left: 20px;
 }
 
-.start-button {
+/* NEW: Styles for the level selection container */
+.level-selection-container {
+  display: flex;
+  justify-content: space-between; /* Pushes buttons to the ends */
+  align-items: center;
+  width: 100%; /* Take full width of its parent */
+  max-width: 500px; /* Limit how far apart buttons can get on large screens */
   margin-top: 10px;
   margin-bottom: 15px;
+  gap: 20px; /* Provides a minimum gap for smaller screens if max-width is hit */
+  flex-wrap: wrap; /* Allow buttons to wrap on very small screens */
+  margin-left: auto; /* Center the container itself */
+  margin-right: auto; /* Center the container itself */
+}
+
+.start-button {
+  /* Removed margin-left/right: auto; as justify-content handles centering/spacing */
   padding: var(--button-padding);
   font-size: clamp(1.2rem, 3vw, 1.5rem); /* Responsive font size for start button */
   font-weight: bold;
@@ -108,12 +122,9 @@ html, body, #root {
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Corrected syntax */
   transition: background-color 0.3s ease;
-  width: auto; /* Adjust width based on content */
-  min-width: 200px; /* Ensure a minimum width */
+  flex-grow: 1; /* Allow buttons to grow to fill space within the container */
+  min-width: 180px; /* Ensure a minimum width for each button */
   text-align: center;
-  display: block; /* Make it a block element to center with margin auto */
-  margin-left: auto;
-  margin-right: auto;
 }
 
 .start-button:hover:not(:disabled) {
@@ -145,6 +156,7 @@ main {
   display: flex; /* Enable flex for main content to stack sections */
   flex-direction: column; /* Stack sections vertically */
   align-items: center; /* Center content horizontally */
+  justify-content: flex-start; /* Align content to the top within each section */
 }
 
 /* Base styles for all sections */
