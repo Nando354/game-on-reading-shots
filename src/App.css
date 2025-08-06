@@ -157,7 +157,7 @@ main {
   flex-direction: column; /* Stack sections vertically */
   align-items: center; /* Center content horizontally */
   justify-content: flex-start; /* Align content to the top within each section */
-  gap: 20px; /* Add gap between sections instead of margin-bottom on each section */
+  gap: 5px; /* Add gap between sections instead of margin-bottom on each section */
 }
 
 /* Base styles for all sections */
@@ -189,16 +189,22 @@ section {
 .video-player-container {
   position: relative; /* Needed for absolute positioning of blackout screen */
   width: 100%; /* Take full width of its parent (#video-section) */
-  max-width: 1400px; /* Max width for the video player itself */
-  padding-bottom: 46.25%; /* Updated to 46.25% as requested */
+  max-width: 1200px; /* Max width for the video player itself */
+  padding-bottom: 42.25%; /* Updated to 46.25% as requested */
   height: 0; /* Important for aspect ratio trick */
   margin-bottom: 0; /* Removed margin-bottom here, gap on main handles spacing */
   background-color: black; /* Default background for the container */
   border-radius: 8px; /* Rounded corners for the video area */
   overflow: hidden; /* Hide anything outside the rounded corners */
 }
+
+.video-responsive {
+  padding-bottom: 46.25%; /* 16:9 aspect ratio */
+}
+
 .ytp-pause-overlay {/* Hide YouTube's default pause overlay */
   background: none !important; /* Remove background */
+  display: none !important; /* Hide the overlay */
 }
 
 .ytp-button {
@@ -745,4 +751,17 @@ section {
 /* NEW: Hidden class for conditional display */
 .hidden {
   display: none !important;
+}
+
+.blackout-timer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 6rem;
+  color: white;
+  background: rgba(0,0,0,0.7);
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  text-align: center;
 }

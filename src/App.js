@@ -47,6 +47,9 @@ function App() {
   // NEW: State to control visibility of the video screen (for advanced level blackout)
   const [isVideoScreenHidden, setIsVideoScreenHidden] = useState(false);
 
+  // NEW: State to control blackout countdown
+  const [blackoutCountdown, setBlackoutCountdown] = useState(null); // null means no timer active
+
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
@@ -382,6 +385,7 @@ function App() {
       setShotMessageColor('green');
       setHighlightNextButton(true);
       setHighlightRestartButton(false);
+      setBlackoutCountdown(null); // Reset blackout countdown when correct answer is given
 
       const currentTime = videoRef.current.getCurrentTime();
       const newStopTimeForPlayback = currentTime + 3; // Video will play for 3 more seconds
@@ -439,6 +443,7 @@ function App() {
     if (gameLevel === 'advanced') {
       console.log("App.js: Advanced level, hiding video screen.");
       setIsVideoScreenHidden(true);
+      setBlackoutCountdown(3); // Start 3-second countdown
     }
 
     // Only show the modal if the 10th video has been attempted and is now paused/ended
@@ -587,6 +592,27 @@ function App() {
     }
   }, [showInstructions, showScoreModal]); // Dependencies for music control
 
+  // Effect to handle blackout countdown
+  useEffect(() => {
+    if (blackoutCountdown === null) return;
+    if (blackoutCountdown === 0) {
+      // Timer expired, show incorrect message and reset blackout
+      const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
+      setShotMessage(incorrectMessages[randomIndex]);
+      setShotMessageColor('red');
+      setHighlightRestartButton(true);
+      setHighlightNextButton(false);
+      setIsVideoScreenHidden(false); // Reveal video
+      setBlackoutCountdown(null); // Stop timer
+      // Do NOT increment correctScores
+    } else {
+      const timer = setTimeout(() => {
+        setBlackoutCountdown(blackoutCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [blackoutCountdown, incorrectMessages]);
+
   // Calculate score for display
   const displayPercentage = totalAttemptsTracked > 0 ?
     ((correctScores / 10) * 100).toFixed(0) // Always calculate out of 10
@@ -713,6 +739,11 @@ function App() {
             {/* Blackout screen overlayed on top of the video */}
             {isVideoScreenHidden && (
               <div className="video-blackout-screen">
+                {gameLevel === 'advanced' && blackoutCountdown !== null && (
+                 <div className="blackout-timer">
+                  <span>{blackoutCountdown}</span>
+                 </div>
+                )}
                 {/* Content for blackout screen, e.g., countdown */}
               </div>
             )}
@@ -799,6 +830,13 @@ function App() {
               Play Again!
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Effect to handle blackout countdown */}
+      {blackoutCountdown !== null && (
+        <div className="blackout-countdown">
+          <p>Next attempt in {blackoutCountdown} seconds...</p>
         </div>
       )}
     </div>
