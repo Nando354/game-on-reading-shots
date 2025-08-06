@@ -47,6 +47,9 @@ function App() {
   // NEW: State to control visibility of the video screen (for advanced level blackout)
   const [isVideoScreenHidden, setIsVideoScreenHidden] = useState(false);
 
+  // NEW: State to indicate if the blackout is due to reaching the initial stop time
+  const [isBlackoutForInitialStop, setIsBlackoutForInitialStop] = useState(false);
+
   // NEW: State to control blackout countdown
   const [blackoutCountdown, setBlackoutCountdown] = useState(null); // null means no timer active
 
@@ -440,11 +443,13 @@ function App() {
   const handleVideoPausedForModalCheck = useCallback(() => {
     console.log("App.js: handleVideoPausedForModalCheck triggered.");
     // NEW: If advanced level, hide video screen when it pauses at stop time
-    if (gameLevel === 'advanced') {
-      console.log("App.js: Advanced level, hiding video screen.");
-      setIsVideoScreenHidden(true);
-      setBlackoutCountdown(3); // Start 3-second countdown
-    }
+    if (gameLevel === 'advanced' && dynamicStopTime === currentVideo.initialStopTime) {
+    setIsVideoScreenHidden(true);
+    setBlackoutCountdown(3);
+    setIsBlackoutForInitialStop(true);
+  } else {
+    setIsBlackoutForInitialStop(false);
+  }
 
     // Only show the modal if the 10th video has been attempted and is now paused/ended
     // This is the single entry point for showing the modal after an attempt on the 10th video.
@@ -453,7 +458,7 @@ function App() {
         setShowScoreModal(true);
         setHasTenthVideoBeenAttempted(false); // Reset for next game cycle
     }
-}, [totalAttemptsTracked, hasTenthVideoBeenAttempted, gameLevel]);
+}, [totalAttemptsTracked, hasTenthVideoBeenAttempted, gameLevel, dynamicStopTime, currentVideo]);
 
   // Modified handleNextVideo to use a shuffled queue
   const handleNextVideo = useCallback(() => {
@@ -737,7 +742,7 @@ function App() {
               </div>
             )}
             {/* Blackout screen overlayed on top of the video */}
-            {isVideoScreenHidden && (
+            {isVideoScreenHidden && isBlackoutForInitialStop && (
               <div className="video-blackout-screen">
                 {gameLevel === 'advanced' && blackoutCountdown !== null && (
                  <div className="blackout-timer">
@@ -839,6 +844,23 @@ function App() {
           <p>Next attempt in {blackoutCountdown} seconds...</p>
         </div>
       )}
+
+      {/* Sound Icon for toggling background music */}
+      <div className="sound-icon-container" onClick={() => {
+  if (backgroundMusicRef.current) {
+    if (backgroundMusicRef.current.paused) {
+      backgroundMusicRef.current.play();
+    } else {
+      backgroundMusicRef.current.pause();
+    }
+  }
+}}>
+  <img
+    src="/sound-icon.svg"
+    alt="Toggle sound"
+    className={`sound-icon ${backgroundMusicRef.current && !backgroundMusicRef.current.paused ? 'sound-on' : 'sound-off'}`}
+  />
+</div>
     </div>
   );
 }
