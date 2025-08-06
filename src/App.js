@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import Video from './components/Video';
 import './App.css';
-import './Video.css';
+import './Video.css'; // Keep this import for now
 import ShotButtons from './components/ShotButtons';
 
 // Utility function to shuffle an array (Fisher-Yates (Knuth) shuffle)
@@ -44,6 +44,9 @@ function App() {
   // NEW: State to track the current game level (e.g., 'beginner', 'advanced')
   const [gameLevel, setGameLevel] = useState('none'); // 'none', 'beginner', 'advanced'
 
+  // NEW: State to control visibility of the video screen (for advanced level blackout)
+  const [isVideoScreenHidden, setIsVideoScreenHidden] = useState(false);
+
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
@@ -67,7 +70,6 @@ function App() {
     { id: "IVL0y1nhV1k", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.47 },
     { id: "lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
     { id: "d2n2RIqJP88", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 6.0, initialStopTime: 10.18 },
-    { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 6.0, initialStopTime: 11.60 },
     { id: "kgiwsnvAWuk", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.72 },
     { id: "SQMNDCkhJwI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.19 },
     { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 9.0, initialStopTime: 14.45 },
@@ -83,6 +85,9 @@ function App() {
   // State for the shuffled playback queue
   const [shuffledVideoQueue, setShuffledVideoQueue] = useState([]);
   const [currentShuffledIndex, setCurrentShuffledIndex] = useState(0);
+  // NEW: State to hold the video details that are *pending* to be loaded into the player
+  const [pendingVideoLoad, setPendingVideoLoad] = useState(null);
+
 
   // Use currentVideo from the shuffled queue
   // This will be the video currently playing or about to play
@@ -97,8 +102,7 @@ function App() {
   // State to display the current player state
   const [playerState, setPlayerState] = useState('Not Ready');
 
-  // New state to track if the video player methods are ready to be called
-  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  // Removed isPlayerReady state from App.js
 
   // State to hold the message from clicked ShotButton
   const [shotMessage, setShotMessage] = useState('');
@@ -166,6 +170,7 @@ function App() {
                     videoId: video.id,
                     playerVars: {
                       controls: 0, autoplay: 0, mute: 1, enablejsapi: 1,
+                      origin: window.location.origin, // Ensure origin is set for temp player
                     },
                     events: {
                       'onReady': (event) => resolve(event.target),
@@ -189,8 +194,8 @@ function App() {
               newIframe.id = `temp-yt-player-${video.id}-${Date.now()}`;
               newIframe.width = '1';
               newIframe.height = '1';
-              // Ensure HTTPS for the temporary iframe as well
-              newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1`;
+              // Ensure HTTPS for the temporary iframe as well and origin
+              newIframe.src = `https://www.youtube.com/embed/${video.id}?enablejsapi=1&autoplay=0&controls=0&mute=1&origin=${window.location.origin}`;
               newIframe.style.border = 'none';
               tempDiv.appendChild(newIframe);
 
@@ -251,34 +256,51 @@ function App() {
     }
   }, [videoList, shuffledVideoQueue.length]); // Depend on videoList and shuffledQueue.length
 
-  // Update currentVideo details (start/stop times) and totalAttemptsTracked when the shuffled index changes
+  // Effect to set pending video load when currentShuffledIndex changes
   useEffect(() => {
-    // Ensure the queue is not empty and the index is valid
     if (shuffledVideoQueue.length > 0 && currentShuffledIndex < shuffledVideoQueue.length) {
       const selectedVideo = shuffledVideoQueue[currentShuffledIndex];
+      setPendingVideoLoad({
+        id: selectedVideo.id,
+        startTime: selectedVideo.initialStartTime,
+        stopTime: selectedVideo.initialStopTime
+      });
       setStartAtTime(selectedVideo.initialStartTime);
       setDynamicStopTime(selectedVideo.initialStopTime);
-      setIsPlayerReady(false); // Reset readiness for the new video to trigger re-initialization in Video.jsx
-      console.log(`App.js: Current video updated to ID: ${selectedVideo.id}, Start: ${selectedVideo.initialStartTime}, Stop: ${selectedVideo.initialStopTime}`);
+      // Removed setIsPlayerReady(false) here, Video.jsx manages its own internal readiness
+      console.log(`App.js: Pending video load set for ID: ${selectedVideo.id}`);
 
       // Increment totalAttemptsTracked here, reflecting videos presented, capped at 10
-      // This is for display purposes as soon as the video is loaded.
       setTotalAttemptsTracked(Math.min(currentShuffledIndex + 1, 10));
     }
   }, [currentShuffledIndex, shuffledVideoQueue]);
+
+  // Effect to load new video into player when Video component is ready and a video is pending load
+  useEffect(() => {
+    // Check if videoRef.current exists and its getIsPlayerReady method reports true
+    if (videoRef.current?.getIsPlayerReady() && pendingVideoLoad && typeof videoRef.current.loadVideoAndPlay === 'function') {
+      console.log(`App.js: Loading pending video via videoRef.current.loadVideoAndPlay: ID: ${pendingVideoLoad.id}, Start: ${pendingVideoLoad.startTime}, Stop: ${pendingVideoLoad.stopTime}`);
+      videoRef.current.loadVideoAndPlay(pendingVideoLoad.id, pendingVideoLoad.startTime, pendingVideoLoad.stopTime);
+      setPendingVideoLoad(null); // Clear pending load after initiating
+      console.log(`App.js: Current video updated to ID: ${pendingVideoLoad.id}, Start: ${pendingVideoLoad.startTime}, Stop: ${pendingVideoLoad.stopTime}`);
+    } else if (pendingVideoLoad && !videoRef.current?.getIsPlayerReady()) { // Check readiness via ref
+      console.warn("App.js: Video pending load, but player not ready. Waiting...");
+    }
+  }, [pendingVideoLoad]); // Removed isPlayerReady from dependencies
 
 
   // Function to handle when the Video component signals that its player is ready
   const handlePlayerInitialized = useCallback(() => {
     console.log("App.js: Video player is now ready!");
-    setIsPlayerReady(true);
-  }, [setIsPlayerReady]);
+    // Removed setIsPlayerReady(true) here, as Video.jsx manages its own internal readiness
+  }, []);
 
 
   // Set up an interval to regularly update the player state for display
   useEffect(() => {
     let interval;
-    if (isPlayerReady) {
+    // Check player readiness via ref
+    if (videoRef.current?.getIsPlayerReady()) {
       interval = setInterval(() => {
         if (videoRef.current && typeof videoRef.current.getPlayerState === 'function') {
           const currentState = videoRef.current.getPlayerState();
@@ -316,12 +338,13 @@ function App() {
         clearInterval(interval);
       }
     };
-  }, [isPlayerReady, videoRef, setPlayerState]);
+  }, [videoRef]); // Depend on videoRef to access getIsPlayerReady()
 
 
   // Function to handle a click on any ShotButton
   const handleShotButtonClick = useCallback((buttonText) => {
-    if (!isPlayerReady || !videoRef.current) {
+    // Check for player readiness via ref before proceeding
+    if (!videoRef.current?.getIsPlayerReady() || !videoRef.current) {
       console.warn("App.js: Video player methods not ready when Shot Button clicked.");
       setShotMessage("Player not ready. Please wait a moment.");
       setShotMessageColor('#333');
@@ -332,10 +355,8 @@ function App() {
 
     // Stop all sound effects before playing a new one
     if (applauseSoundRef.current) applauseSoundRef.current.pause();
-    if (awwSoundRef.current) awwSoundRef.current.pause();
-    if (applauseSoundRef.current) applauseSoundRef.current.currentTime = 0;
-    if (awwSoundRef.current) awwSoundRef.current.currentTime = 0;
-
+    if (awwSoundRef.current) awwSoundRef.current.currentTime = 0; // Reset aww sound
+    if (applauseSoundRef.current) applauseSoundRef.current.currentTime = 0; // Reset applause sound
 
     const videoId = currentVideo.id;
     const isFirstAttemptForThisVideo = !videoAttemptStatus[videoId];
@@ -362,19 +383,25 @@ function App() {
       setHighlightNextButton(true);
       setHighlightRestartButton(false);
 
+      const currentTime = videoRef.current.getCurrentTime();
+      const newStopTimeForPlayback = currentTime + 3; // Video will play for 3 more seconds
+      setDynamicStopTime(newStopTimeForPlayback); // Update dynamic stop time for the current video
+
       if (applauseSoundRef.current) {
         applauseSoundRef.current.play().catch(e => console.error("Error playing applause sound:", e));
       }
 
-      const currentTime = videoRef.current.getCurrentTime();
-      const newStopTimeForPlayback = currentTime + 3; // Video will play for 3 more seconds
-      setDynamicStopTime(newStopTimeForPlayback);
+      // Unhide video screen in advanced level when correct
+      if (gameLevel === 'advanced') {
+        setIsVideoScreenHidden(false);
+      }
 
-      setTimeout(() => {
-        if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-          videoRef.current.playVideo();
-        }
-      }, 200);
+      // Now we call the Video component's new method to play with the updated stop time
+      if (videoRef.current && typeof videoRef.current.loadVideoAndPlay === 'function') {
+        videoRef.current.loadVideoAndPlay(currentVideo.id, currentTime, newStopTimeForPlayback);
+      } else {
+        console.warn("App.js: loadVideoAndPlay method not available on videoRef.current.");
+      }
 
       // Modal logic for correct answers on 10th video is handled by handleVideoPausedForModalCheck
     } else { // Incorrect answer
@@ -388,13 +415,14 @@ function App() {
         awwSoundRef.current.play().catch(e => console.error("Error playing aww sound:", e));
       }
 
-      videoRef.current.seekTo(startAtTime, true);
-      setTimeout(() => {
-        if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-          videoRef.current.playVideo();
-        }
-      }, 200);
-      setDynamicStopTime(currentVideo.initialStopTime); // Reset stop time
+      // Reset video to its initial start time and play again.
+      // We'll use the new method to ensure correct stop time is used.
+      if (videoRef.current && typeof videoRef.current.loadVideoAndPlay === 'function') {
+        videoRef.current.loadVideoAndPlay(currentVideo.id, startAtTime, currentVideo.initialStopTime);
+      } else {
+        console.warn("App.js: loadVideoAndPlay method not available on videoRef.current.");
+      }
+      setDynamicStopTime(currentVideo.initialStopTime); // Reset stop time for incorrect answer
 
       // NEW: If it's the 10th video and incorrect, mark it for modal display later
       // The modal will then be triggered by handleVideoPausedForModalCheck after the video resets and pauses.
@@ -402,18 +430,25 @@ function App() {
         setHasTenthVideoBeenAttempted(true);
       }
     }
-  }, [isPlayerReady, videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, totalAttemptsTracked]);
+  }, [videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, totalAttemptsTracked]);
 
   // Callback for when the video pauses/ends due to stop time or natural end
   const handleVideoPausedForModalCheck = useCallback(() => {
-    // NEW: Only show the modal if the 10th video has been attempted and is now paused/ended
+    console.log("App.js: handleVideoPausedForModalCheck triggered.");
+    // NEW: If advanced level, hide video screen when it pauses at stop time
+    if (gameLevel === 'advanced') {
+      console.log("App.js: Advanced level, hiding video screen.");
+      setIsVideoScreenHidden(true);
+    }
+
+    // Only show the modal if the 10th video has been attempted and is now paused/ended
     // This is the single entry point for showing the modal after an attempt on the 10th video.
     if (totalAttemptsTracked === 10 && hasTenthVideoBeenAttempted) {
+        console.log("App.js: Showing score modal.");
         setShowScoreModal(true);
         setHasTenthVideoBeenAttempted(false); // Reset for next game cycle
     }
-}, [totalAttemptsTracked, hasTenthVideoBeenAttempted]);
-
+}, [totalAttemptsTracked, hasTenthVideoBeenAttempted, gameLevel]);
 
   // Modified handleNextVideo to use a shuffled queue
   const handleNextVideo = useCallback(() => {
@@ -431,13 +466,15 @@ function App() {
       // Note: Score reset logic is now handled by the modal's restart button or game start button
     }
 
+    // Update current shuffled index. This will trigger the useEffect that loads the new video.
     setCurrentShuffledIndex(nextIndex);
     setShotMessage('');
     setShotMessageColor('#333'); // Reset message color
-    setIsPlayerReady(false); // Reset readiness to trigger player re-initialization for the new video
+    // Removed setIsPlayerReady(false) here
     setHighlightNextButton(false); // Reset highlight
     setHighlightRestartButton(false); // Reset highlight
-  }, [currentShuffledIndex, shuffledVideoQueue, videoList, setShotMessage, setIsPlayerReady, setShotMessageColor]);
+    setIsVideoScreenHidden(false); // Ensure video is visible for the next video
+  }, [currentShuffledIndex, shuffledVideoQueue, videoList, setShotMessage, setShotMessageColor]);
 
 
   // Handler for "Start Playing!" button in instructions
@@ -454,9 +491,19 @@ function App() {
     setVideoAttemptStatus({}); // Reset status of videos attempted for scoring
     setShowScoreModal(false); // Ensure modal is hidden
     setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
-    // Reshuffle for a new game every time "Start Playing" is clicked
-    setShuffledVideoQueue(shuffleArray([...videoList]));
+    setIsVideoScreenHidden(false); // Ensure video is visible at game start
+
+    const newShuffledQueue = shuffleArray([...videoList]);
+    setShuffledVideoQueue(newShuffledQueue);
     setCurrentShuffledIndex(0);
+
+    if (newShuffledQueue.length > 0) {
+      setStartAtTime(newShuffledQueue[0].initialStartTime);
+      setDynamicStopTime(newShuffledQueue[0].initialStopTime);
+    }
+
+    // Initial video load is now handled by the useEffect that watches currentShuffledIndex
+    // No direct call to videoRef.current.loadNewVideo here
   }, [videoList]);
 
   // General handler for navigation from hamburger menu
@@ -471,7 +518,9 @@ function App() {
     setShowScoreModal(false); // Ensure modal is hidden
     setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
     setGameLevel('none'); // Reset game level when navigating away from game play
+    setIsVideoScreenHidden(false); // Ensure video is visible if navigating back to instructions/list
 
+    // Control visibility of sections using CSS classes
     if (target === 'instructions') {
       setShowInstructions(true);
       setShowVideoList(false);
@@ -483,48 +532,44 @@ function App() {
       setShowVideoList(false);
       // Ensure game is ready to play if navigating directly to it
       if (shuffledVideoQueue.length === 0) {
-        setShuffledVideoQueue(shuffleArray([...videoList]));
+        const newShuffledQueue = shuffleArray([...videoList]);
+        setShuffledVideoQueue(newShuffledQueue);
         setCurrentShuffledIndex(0);
+        // The useEffect watching currentShuffledIndex will handle loading the video
+      } else {
+        // If navigating back to game and queue exists, ensure current video is loaded/playing
+        const current = shuffledVideoQueue[currentShuffledIndex];
+        // Check player readiness via ref before calling loadVideoAndPlay
+        if (videoRef.current?.getIsPlayerReady() && current && typeof videoRef.current.loadVideoAndPlay === 'function') {
+          videoRef.current.loadVideoAndPlay(current.id, current.initialStartTime, current.initialStopTime);
+        }
       }
       // If navigating to game directly, ensure a level is set, default to beginner if none
       if (gameLevel === 'none') {
         setGameLevel('beginner');
       }
     }
-  }, [shuffledVideoQueue.length, videoList, gameLevel]);
+  }, [shuffledVideoQueue.length, videoList, gameLevel, currentShuffledIndex, shuffledVideoQueue]);
 
   // Function to restart the game from the modal
   const handleRestartGame = useCallback(() => {
     setCorrectScores(0);
     setTotalAttemptsTracked(0);
     setVideoAttemptStatus({});
-    setShuffledVideoQueue(shuffleArray([...videoList])); // Reshuffle for a new game
+    const newShuffledQueue = shuffleArray([...videoList]); // Reshuffle for a new game
+    setShuffledVideoQueue(newShuffledQueue);
     setCurrentShuffledIndex(0); // Start from the first video
     setShotMessage('');
     setShotMessageColor('#333');
-    setIsPlayerReady(false);
+    // Removed setIsPlayerReady(false) here
     setHighlightNextButton(false);
     setHighlightRestartButton(false);
     setShowScoreModal(false); // Hide the modal
     setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
+    setIsVideoScreenHidden(false); // Ensure video is visible on game restart
 
-    // Ensure the video player is loaded and ready for the first video of the new game
-    // The useEffect that updates currentVideo will handle setting startAtTime/dynamicStopTime
-    // and setting setIsPlayerReady(false), which will trigger Video.jsx to re-initialize.
-    // A small delay might be good here to ensure the UI updates before the video tries to play
-    if (videoRef.current) {
-        setTimeout(() => {
-            // Attempt to play only if player is truly ready after re-initialization
-            if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-                // Access the initialStartTime of the first video in the NEW shuffled queue
-                const firstVideoOfNewGame = shuffledVideoQueue[0] || initialVideoList[0];
-                videoRef.current.seekTo(firstVideoOfNewGame.initialStartTime, true);
-                videoRef.current.playVideo();
-            }
-        }, 500); // Give React and the Video component a moment to process the new video
-    }
-
-  }, [videoList, initialVideoList, shuffledVideoQueue]); // Added shuffledVideoQueue to dependencies for initialSeek
+    // The useEffect watching currentShuffledIndex will handle loading the video
+  }, [videoList]);
 
   // Effect to control background music playback
   useEffect(() => {
@@ -559,11 +604,9 @@ function App() {
       <audio ref={applauseSoundRef} src="/applause-108368.mp3" preload="auto" />
       <audio ref={awwSoundRef} src="/aww-8277.mp3" preload="auto" />
 
-      {showInstructions && (
-        <header className="App-header">
-          <h1>READ THE SHOT!</h1>
-        </header>
-      )}
+      <header className="App-header">
+        <h1>READ THE SHOT!</h1>
+      </header>
 
       {/* Hamburger Menu Container - Fixed position to float on all screens */}
       <div
@@ -583,173 +626,180 @@ function App() {
         )}
       </div>
 
-      {showInstructions ? (
-        // Instructions Page
-        <section id="instructions-page">
-          <div className="instructions-content">
-            {/* Level Selection Buttons */}
-            <div className="level-selection-container">
-              <button
-                onClick={() => handleStartPlaying('beginner')}
-                className="start-button"
-                disabled={isLoadingVideoDetails}
-              >
-                {isLoadingVideoDetails ? 'Loading Videos...' : 'Beginner Level'}
-              </button>
-              <button
-                onClick={() => handleStartPlaying('advanced')}
-                className="start-button advanced-button"
-                disabled={isLoadingVideoDetails}
-              >
-                {isLoadingVideoDetails ? 'Loading Videos...' : 'Advanced Level'}
-              </button>
-            </div>
-            
-            {isLoadingVideoDetails && (
-              <p className="loading-instructions-message">
-                (Please wait for videos to load)
-              </p>
-            )}
-            <h2 className="instructions-title">How to Use This App:</h2>
-            <p className="instructions-text">
-              Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
-              Follow these steps to improve your game:
+      {/* Instructions Page (conditionally visible using CSS class) */}
+      <section id="instructions-page" className={showInstructions ? '' : 'hidden'}>
+        <div className="instructions-content">
+          {/* Level Selection Buttons */}
+          <div className="level-selection-container">
+            <button
+              onClick={() => handleStartPlaying('beginner')}
+              className="start-button"
+              disabled={isLoadingVideoDetails}
+            >
+              {isLoadingVideoDetails ? 'Loading Videos...' : 'Beginner Level'}
+            </button>
+            <button
+              onClick={() => handleStartPlaying('advanced')}
+              className="start-button advanced-button"
+              disabled={isLoadingVideoDetails}
+            >
+              {isLoadingVideoDetails ? 'Loading Videos...' : 'Advanced Level'}
+            </button>
+          </div>
+          
+          {isLoadingVideoDetails && (
+            <p className="loading-instructions-message">
+              (Please wait for videos to load)
             </p>
-            <ol className="instructions-list">
-              <li><strong>Watch the Video:</strong> The video will play from a designated start time and pause automatically at a specific point.</li>
-              <li><strong>Read the Shot:</strong> Observe the hitter's body, arm, and hand motion carefully during the playback.</li>
-              <li><strong>Select the Shot:</strong> Choose the button below that corresponds to the shot you believe the hitter is attempting (e.g., Line, Angle, Cut, Short, Jump Set).</li>
-              <li><strong>Get Feedback:</strong>
-                <ul className="feedback-list">
-                  <li>If you're **correct**, the video will continue playing for a few more seconds, allowing you to see the outcome.</li>
-                  <li>If you're **incorrect**, the video will reset to the start time, giving you another chance to read the shot.</li>
-                </ul>
-              </li>
-              <li><strong>Restart or Next:</strong>
-                <ul className="action-list">
-                  <li>Click "Restart Video" to re-watch the current video from the beginning of the action.</li>
-                  <li>Click "Next Video" to move to the next video in the list.</li>
-                </ul>
-              </li>
-              <li><strong>Score Tracking:</strong> 
-                <ul className="action-list">
-                  <li>Your score will be tracked over the first 10 unique videos and shots you attempt to read.</li>
-                  <li>Your score is only tracked on your first attempt any subsequent video restarts will not be counted towards your points</li>
-                  <li>After 10 attempts, your final score will be displayed, and you can choose to play again!</li>
-                </ul>
-              </li>
-            </ol>
-            
+          )}
+          <h2 className="instructions-title">How to Use This App:</h2>
+          <p className="instructions-text">
+            Welcome to "READ THE SHOT!" This app helps you practice reading volleyball shots.
+            Follow these steps to improve your game:
+          </p>
+          <ol className="instructions-list">
+            <li><strong>Watch the Video:</strong> The video will play from a designated start time and pause automatically at a specific point.</li>
+            <li><strong>Read the Shot:</strong> Observe the hitter's body, arm, and hand motion carefully during the playback.</li>
+            <li><strong>Select the Shot:</strong> Choose the button below that corresponds to the shot you believe the hitter is attempting (e.g., Line, Angle, Cut, Short, Jump Set).</li>
+            <li><strong>Get Feedback:</strong>
+              <ul className="feedback-list">
+                <li>If you're **correct**, the video will continue playing for a few more seconds, allowing you to see the outcome.</li>
+                <li>If you're **incorrect**, the video will reset to the start time, giving you another chance to read the shot.</li>
+              </ul>
+            </li>
+            <li><strong>Restart or Next:</strong>
+              <ul className="action-list">
+                <li>Click "Restart Video" to re-watch the current video from the beginning of the action.</li>
+                <li>Click "Next Video" to move to the next video in the list.</li>
+              </ul>
+            </li>
+            <li><strong>Score Tracking:</strong> 
+              <ul className="action-list">
+                <li>Your score will be tracked over the first 10 unique videos and shots you attempt to read.</li>
+                <li>Your score is only tracked on your first attempt any subsequent video restarts will not be counted towards your points</li>
+                <li>After 10 attempts, your final score will be displayed, and you can choose to play again!</li>
+              </ul>
+            </li>
+          </ol>
+          
+        </div>
+      </section>
+
+      {/* Main Application Content (always mounted, visibility controlled by CSS class) */}
+      {/* This 'main' element will now always be in the DOM. */}
+      <main className={(!showInstructions && !showVideoList) ? '' : 'hidden'}>
+        {/* Video Section */}
+        <section id="video-section">
+          <p className="video-status-text">Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
+          {/* Always render the video player container */}
+          <div className="video-player-container">
+            {/* Pass initial video details from videoList[0] to ensure stable props on initial mount */}
+            <Video
+              ref={videoRef}
+              embedId={videoList[0].id}
+              startTime={videoList[0].initialStartTime}
+              stopTime={videoList[0].initialStopTime}
+              onPlayerInitialized={handlePlayerInitialized}
+              onVideoPausedForStopTime={handleVideoPausedForModalCheck}
+            />
+            {/* Overlay for loading state */}
+            {(isLoadingVideoDetails || shuffledVideoQueue.length === 0) && (
+              <div className="video-overlay-message">
+                <p className="loading-message">
+                  Loading video details and preparing playback queue... Please wait...
+                </p>
+              </div>
+            )}
+            {/* Blackout screen overlayed on top of the video */}
+            {isVideoScreenHidden && (
+              <div className="video-blackout-screen">
+                {/* Content for blackout screen, e.g., countdown */}
+              </div>
+            )}
+          </div>
+
+          {/* Apply dynamic color to shotMessage */}
+          {shotMessage && <p className="shot-message" style={{ color: shotMessageColor }}>{shotMessage}</p>}
+        </section>
+
+        {/* Controls Section */}
+        <section id="controls-section">
+          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={videoRef.current?.getIsPlayerReady() && !isLoadingVideoDetails} />
+
+          <div className="action-buttons-container">
+            <button
+              onClick={() => {
+                // Check player readiness via ref
+                if (videoRef.current?.getIsPlayerReady() && videoRef.current && typeof videoRef.current.loadVideoAndPlay === 'function') {
+                  videoRef.current.loadVideoAndPlay(currentVideo.id, startAtTime, currentVideo.initialStopTime);
+                  setShotMessage('');
+                  setShotMessageColor('#333'); // Reset message color on restart
+                  setDynamicStopTime(currentVideo.initialStopTime);
+                  setHighlightRestartButton(false); // Reset highlight
+                  setHighlightNextButton(false); // Reset highlight
+                  setIsVideoScreenHidden(false); // Ensure video is visible on restart
+                } else {
+                  console.warn("App.js: Video player methods not ready when Restart button clicked.");
+                  setShotMessage("Player not ready. Please wait a moment.");
+                  setShotMessageColor('#333'); // Default color if player not ready
+                }
+              }}
+              className={`action-button ${highlightRestartButton ? 'highlight-active' : ''}`}
+              // Check player readiness via ref
+              disabled={!videoRef.current?.getIsPlayerReady() || isLoadingVideoDetails}
+            >
+              Restart Video
+            </button>
+
+            {/* Score Display - Display only if attempts have been made AND modal is NOT visible */}
+            {totalAttemptsTracked > 0 && !showScoreModal && (
+                <p className="score-display">
+                    SCORE: {displayPercentage}% - VIDEO (<strong style={{color: 'white'}}>{displayCorrectCount}</strong>/10)
+                </p>
+            )}
+
+            <button
+              onClick={handleNextVideo}
+              className={`action-button ${highlightNextButton ? 'highlight-active' : ''}`}
+              // Check player readiness via ref
+              disabled={!videoRef.current?.getIsPlayerReady() || isLoadingVideoDetails || shuffledVideoQueue.length === 0 || showScoreModal}
+            >
+              Next Video
+            </button>
           </div>
         </section>
-      ) : (
-        // Main Application Content
-        <main>
-          {/* Video Section */}
-          <section id="video-section">
-            <p className="video-status-text">Video starts at {startAtTime} seconds and pauses at {dynamicStopTime} seconds. VIDEO: <strong>{playerState}</strong></p>
-            {isLoadingVideoDetails || shuffledVideoQueue.length === 0 ? (
-              <p className="loading-message">
-                Loading video details and preparing playback queue... Please wait...
-              </p>
-            ) : (
-              <Video
-                key={currentVideo.id} // Key ensures re-mount of Video component when ID changes
-                ref={videoRef}
-                embedId={currentVideo.id}
-                startTime={startAtTime}
-                stopTime={dynamicStopTime}
-                onPlayerInitialized={handlePlayerInitialized}
-                onVideoPausedForStopTime={handleVideoPausedForModalCheck}
-              />
-            )}
+      </main>
 
-            {/* Apply dynamic color to shotMessage */}
-            {shotMessage && <p className="shot-message" style={{ color: shotMessageColor }}>{shotMessage}</p>}
-          </section>
+      {/* Video List Section (always mounted, visibility controlled by CSS class) */}
+      <section id="video-list-section" className={showVideoList ? '' : 'hidden'}>
+        <h3>Video List:</h3>
+        <ul className="video-list">
+          {videoList.map((video, index) => (
+            <li
+              key={video.id}
+              className={`video-list-item ${currentVideo.id === video.id ? 'current-video' : ''}`}
+            >
+              {video.title} {video.videoUrl && `(URL: ${video.videoUrl})`}
+            </li>
+          ))}
+        </ul>
+      </section>
 
-          {/* Controls Section */}
-          <section id="controls-section">
-            <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={isPlayerReady && !isLoadingVideoDetails} />
-
-            <div className="action-buttons-container">
-              <button
-                onClick={() => {
-                  if (isPlayerReady) {
-                    videoRef.current.seekTo(startAtTime, true);
-                    setShotMessage('');
-                    setShotMessageColor('#333'); // Reset message color on restart
-                    setDynamicStopTime(currentVideo.initialStopTime);
-                    setHighlightRestartButton(false); // Reset highlight
-                    setHighlightNextButton(false); // Reset highlight
-                    setTimeout(() => {
-                      if (videoRef.current && typeof videoRef.current.playVideo === 'function') {
-                        videoRef.current.playVideo();
-                      }
-                    }, 100);
-                  } else {
-                    console.warn("App.js: Video player methods not ready when Restart button clicked.");
-                    setShotMessage("Player not ready. Please wait a moment.");
-                    setShotMessageColor('#333'); // Default color if player not ready
-                  }
-                }}
-                className={`action-button ${highlightRestartButton ? 'highlight-active' : ''}`}
-                disabled={!isPlayerReady || isLoadingVideoDetails}
-              >
-                Restart Video
-              </button>
-
-              {/* Score Display - Display only if attempts have been made AND modal is NOT visible */}
-              {totalAttemptsTracked > 0 && !showScoreModal && (
-                  <p className="score-display">
-                      SCORE: {displayPercentage}% - VIDEO ({totalAttemptsTracked}/10)
-                  </p>
-              )}
-
-              <button
-                onClick={handleNextVideo}
-                className={`action-button ${highlightNextButton ? 'highlight-active' : ''}`}
-                disabled={!isPlayerReady || isLoadingVideoDetails || shuffledVideoQueue.length === 0 || showScoreModal}
-              >
-                Next Video
-              </button>
-            </div>
-          </section>
-
-          {/* Video List Section (Conditionally Rendered) */}
-          {showVideoList && (
-            <section id="video-list-section">
-              <h3>Video List:</h3>
-              <ul className="video-list">
-                {videoList.map((video, index) => (
-                  <li
-                    key={video.id}
-                    className={`video-list-item ${currentVideo.id === video.id ? 'current-video' : ''}`}
-                  >
-                    {video.title} {video.videoUrl && `(URL: ${video.videoUrl})`}
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {/* Score Modal */}
-          {showScoreModal && (
-            <div className="score-modal-overlay">
-              <div className="score-modal-content">
-                <h2>Game Over!</h2>
-                <p>Your Final Score:</p>
-                <p className="final-score">{displayCorrectCount}/10 ({displayPercentage}%)</p> {/* Changed display to X/10 */}
-                <button
-                  onClick={handleRestartGame}
-                  className="modal-restart-button"
-                >
-                  Play Again!
-                </button>
-              </div>
-            </div>
-          )}
-        </main>
+      {/* Score Modal */}
+      {showScoreModal && (
+        <div className="score-modal-overlay">
+          <div className="score-modal-content">
+            <h2>Game Over!</h2>
+            <p>Your Final Score:</p>
+            <p className="final-score">{displayCorrectCount}/10 ({displayPercentage}%)</p> {/* Changed display to X/10 */}
+            <button
+              onClick={handleRestartGame}
+              className="modal-restart-button"
+            >
+              Play Again!
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
