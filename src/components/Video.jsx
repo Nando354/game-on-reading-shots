@@ -71,7 +71,10 @@ const Video = forwardRef(({ embedId, stopTime, startTime = 0, onPlayerInitialize
       intervalRef.current = setInterval(() => {
         if (playerRef.current && typeof playerRef.current.getCurrentTime === 'function') {
           const currentTime = playerRef.current.getCurrentTime();
-          console.log(`Video.jsx: Interval check - Current Time: ${currentTime.toFixed(2)}, Stop Time: ${stopTimeRef.current}`);
+          const currentTimeStr = typeof currentTime === 'number' && !isNaN(currentTime)
+            ? currentTime.toFixed(2)
+            : 'N/A';
+          // console.log(`Video.jsx: Interval check - Current Time: ${currentTimeStr}, Stop Time: ${stopTimeRef.current}`);
           // Use stopTimeRef.current for the check
           if (stopTimeRef.current && currentTime >= stopTimeRef.current) {
             console.log(`Video.jsx: Stop time (${stopTimeRef.current}) reached or exceeded. Attempting to pause video.`);
