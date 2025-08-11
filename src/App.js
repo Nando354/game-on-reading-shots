@@ -873,12 +873,19 @@ function App() {
           <div className="score-modal-content">
             <h2>Game Over!</h2>
             <p>Your Final Score:</p>
-            <p className="final-score">{displayCorrectCount}/10 ({displayPercentage}%)</p> {/* Changed display to X/10 */}
+            <p className="final-score">{displayPercentage}%</p>
+            <p>Play Again!</p>
             <button
-              onClick={handleRestartGame}
+              onClick={() => handleStartPlaying('beginner')}
               className="modal-restart-button"
             >
-              Play Again!
+              Beginner Level
+            </button>
+            <button
+              onClick={() => handleStartPlaying('advanced')}
+              className="modal-restart-button advanced-button"
+            >
+              Advanced Level
             </button>
           </div>
         </div>
