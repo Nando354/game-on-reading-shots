@@ -53,36 +53,40 @@ function App() {
   // NEW: State to control blackout countdown
   const [blackoutCountdown, setBlackoutCountdown] = useState(null); // null means no timer active
 
+  // NEW: Derived state to count how many unique videos have been attempted
+  const maxVideos = 10;
+  const displayCorrectCount = Math.min(Object.keys(videoAttemptStatus).length, maxVideos);
+  console.log(displayCorrectCount)
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
-    { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 2.0, initialStopTime: 4.80 },
-    { id: "ncticos1PKc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 2.0, initialStopTime: 4.55},
-    { id: "OoqS1pvUQbY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.0, initialStopTime: 3.35 },
-    { id: "RGywebZ9oW8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.48 },
-    { id: "4x8cuBp8hl4", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 1.0, initialStopTime: 4.57 },
-    { id: "i9Zh0oxh5gs", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 5.0, initialStopTime: 9.51 },
-    { id: "oa9wFeBFzMY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 2.0, initialStopTime: 8.26 },
-    { id: "sg9C1Hu3HW8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 3.0, initialStopTime: 7.00 },
-    { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 1.0, initialStopTime: 5.89 },
-    { id: "lKDk0zIWNC4", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 5.04 },
-    { id: "oFm_dwzmjD8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 4.52 },
-    // { id: "trV2xBDevf8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.0, initialStopTime: 6.59 },
+    // { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 0.0, initialStopTime: 4.80 },
+    // { id: "ncticos1PKc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 4.55},
+    // { id: "OoqS1pvUQbY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 3.35 },
+    // { id: "RGywebZ9oW8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 8.0, initialStopTime: 12.48 },
+    // { id: "4x8cuBp8hl4", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 4.57 },
+    // { id: "i9Zh0oxh5gs", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 5.0, initialStopTime: 9.51 },
+    // { id: "oa9wFeBFzMY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 8.26 },
+      // { id: "sg9C1Hu3HW8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.8, initialStopTime: 7.00 },
+      // { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 5.89 },
+      // { id: "lKDk0zIWNC4", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 5.04 },
+      // { id: "oFm_dwzmjD8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 4.52 },
+    // { id: "trV2xBDevf8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 2.0, initialStopTime: 6.59 },
     // { id: "jJ3o8WQwxgs", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 0.0, initialStopTime: 2.05 },
-    // { id: "Nf39ym_abvo", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 5.0, initialStopTime: 9.23 },
+    // { id: "Nf39ym_abvo", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 3.2, initialStopTime: 9.23 },
     // { id: "_z-t6Rt5P6E", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 16.0, initialStopTime: 21.17 },
-    // { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 },
-    // { id: "NWG9NfrZfO0", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.95 },
-    // { id: "IVL0y1nhV1k", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.47 },
-    // { id: "lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
-    // { id: "d2n2RIqJP88", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 6.0, initialStopTime: 10.18 },
-    // { id: "kgiwsnvAWuk", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.72 },
-    // { id: "SQMNDCkhJwI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.19 },
-    // { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 9.0, initialStopTime: 14.45 },
-    // { id: "2J46Jd3lz_k", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 4.0, initialStopTime: 7.69 },
-    // { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 },
-    // { id: "p-zaS41MFyQ", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 4.0, initialStopTime: 7.71 },
-    { id: "2mUUc3scIyY", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 9.0, initialStopTime: 15.59 }
+    { id: "PFIjY7rXQ6o", title: "Loading title...", videoUrl: null, correctShot: "Hit on 1", initialStartTime: 0.0, initialStopTime: 6.59 },
+    { id: "NWG9NfrZfO0", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.95 },
+    { id: "IVL0y1nhV1k", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.47 },
+    { id: "lds1lM2XmZI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 12.0, initialStopTime: 20.62 },
+    { id: "d2n2RIqJP88", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 6.0, initialStopTime: 10.18 },
+    { id: "kgiwsnvAWuk", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 3.72 },
+    { id: "SQMNDCkhJwI", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 5.19 },
+    { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 7.0, initialStopTime: 14.45 },
+    { id: "2J46Jd3lz_k", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 4.0, initialStopTime: 7.69 },
+    { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 },
+    { id: "p-zaS41MFyQ", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 0.0, initialStopTime: 7.71 },
+    { id: "2mUUc3scIyY", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 6.0, initialStopTime: 15.59 }
   ], []);
 
   // State to hold the fully populated video list (with titles/URLs fetched)
@@ -372,12 +376,22 @@ function App() {
     if (isFirstAttemptForThisVideo) {
       if (buttonText === currentVideo.correctShot) {
         setCorrectScores(prev => prev + 1);
+        setShotMessage(correctMessages[Math.floor(Math.random() * correctMessages.length)]);
+        setShotMessageColor('green');
+      } else {
+        setShotMessage(incorrectMessages[Math.floor(Math.random() * incorrectMessages.length)]);
+        setShotMessageColor('red');
       }
-      setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true })); // Mark this video as attempted for scoring
+      setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
 
-      // NEW: If this is the 10th video's first attempt, mark it for modal display later
-      if (displayCorrectCount + 1 === 10) { // +1 because setState is async
-        setHasTenthVideoBeenAttempted(true);
+      // If this is the 10th video's first attempt, show the message, then the modal
+      if (currentShuffledIndex === maxVideos - 1) {
+        setTimeout(() => {
+          setShowScoreModal(true);
+          setHasTenthVideoBeenAttempted(true);
+          setShotMessage('');
+        }, 2000); // or 4000 for advanced, match your message duration
+        return;
       }
     }
 
@@ -412,6 +426,7 @@ function App() {
 
       // Modal logic for correct answers on 10th video is handled by handleVideoPausedForModalCheck
     } else { // Incorrect answer
+      console.log(`App.js: Incorrect answer for video ID ${videoId}.`);
       const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
       setShotMessage(incorrectMessages[randomIndex]);
       setShotMessageColor('red');
@@ -422,22 +437,36 @@ function App() {
         awwSoundRef.current.play().catch(e => console.error("Error playing aww sound:", e));
       }
 
+      // In advanced mode, keep the blackout screen up during the incorrect message
+      if (gameLevel === 'advanced') {
+        setIsVideoScreenHidden(true);
+        setIsBlackoutForInitialStop(false); // Not the initial stop, but still blackout for feedback
+      }
+
       // Reset video to its initial start time and play again.
       // We'll use the new method to ensure correct stop time is used.
-      if (videoRef.current && typeof videoRef.current.loadVideoAndPlay === 'function') {
-        videoRef.current.loadVideoAndPlay(currentVideo.id, startAtTime, currentVideo.initialStopTime);
-      } else {
-        console.warn("App.js: loadVideoAndPlay method not available on videoRef.current.");
-      }
-      setDynamicStopTime(currentVideo.initialStopTime); // Reset stop time for incorrect answer
+      // Wait 3 seconds before replaying the video and clearing the message
+      setTimeout(() => {
+        // Reveal video and replay after 4 seconds
+        setIsVideoScreenHidden(false);
+        // Reset video to its initial start time and play again.
+        if (videoRef.current && typeof videoRef.current.loadVideoAndPlay === 'function') {
+          videoRef.current.loadVideoAndPlay(currentVideo.id, startAtTime, currentVideo.initialStopTime);
+        } else {
+          console.warn("App.js: loadVideoAndPlay method not available on videoRef.current.");
+        }
+        setDynamicStopTime(currentVideo.initialStopTime); // Reset stop time for incorrect answer
+        setShotMessage(''); // Clear the incorrect message after 3 seconds
+        setShotMessageColor('#333');
+        setHighlightRestartButton(false);
+      }, 3000);
 
       // NEW: If it's the 10th video and incorrect, mark it for modal display later
-      // The modal will then be triggered by handleVideoPausedForModalCheck after the video resets and pauses.
-      if (totalAttemptsTracked === 10) {
+      if (displayCorrectCount === 10) {
         setHasTenthVideoBeenAttempted(true);
       }
     }
-  }, [videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, totalAttemptsTracked]);
+  }, [videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, displayCorrectCount]);
 
   // Callback for when the video pauses/ends due to stop time or natural end
   const handleVideoPausedForModalCheck = useCallback(() => {
@@ -450,13 +479,6 @@ function App() {
   } else {
     setIsBlackoutForInitialStop(false);
   }
-
-    // Only show the modal if the 10th video has been attempted and is now paused/ended
-    // This is the single entry point for showing the modal after an attempt on the 10th video.
-    if (displayCorrectCount === 10 && hasTenthVideoBeenAttempted) {
-      setShowScoreModal(true);
-      setHasTenthVideoBeenAttempted(false);
-    }
 }, [totalAttemptsTracked, hasTenthVideoBeenAttempted, gameLevel, dynamicStopTime, currentVideo]);
 
   // Modified handleNextVideo to use a shuffled queue
@@ -466,16 +488,25 @@ function App() {
       return;
     }
 
+    // Prevent advancing past the last video (10th)
+    if (currentShuffledIndex >= maxVideos - 1) {
+      // Already at last video, do not advance
+      return;
+    }
+
     const videoId = currentVideo.id;
     // If the user did NOT make a guess for this video, count as incorrect and attempted
     if (!videoAttemptStatus[videoId]) {
-      console.log(`App.js: No guess made for video ID ${videoId}. Counting as incorrect.`);
       setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
-      // Optionally show a message
       setShotMessage("No guess made. Counted as incorrect.");
       setShotMessageColor('red');
-      if (displayCorrectCount + 1 === 10) {
-        setHasTenthVideoBeenAttempted(true);
+      if (currentShuffledIndex === maxVideos - 1) {
+        setTimeout(() => {
+          setShowScoreModal(true);
+          setHasTenthVideoBeenAttempted(true);
+          setShotMessage('');
+        }, 2000);
+        return;
       }
     }
 
@@ -614,13 +645,15 @@ function App() {
   useEffect(() => {
     if (blackoutCountdown === null) return;
     if (blackoutCountdown === 0) {
-      // Timer expired, show incorrect message and reset blackout
-      const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
-      setShotMessage(incorrectMessages[randomIndex]);
-      setShotMessageColor('red');
-      setHighlightRestartButton(true);
-      setHighlightNextButton(false);
-      setIsVideoScreenHidden(false); // Reveal video
+      // Only show incorrect message if one is not already showing
+      if (!shotMessage) {
+        const randomIndex = Math.floor(Math.random() * incorrectMessages.length);
+        setShotMessage(incorrectMessages[randomIndex]);
+        setShotMessageColor('red');
+        setHighlightRestartButton(true);
+        setHighlightNextButton(false);
+      }
+      // Do NOT setIsVideoScreenHidden(false) here!
       setBlackoutCountdown(null); // Stop timer
       // Do NOT increment correctScores
     } else {
@@ -629,9 +662,9 @@ function App() {
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [blackoutCountdown, incorrectMessages]);
+  }, [blackoutCountdown, incorrectMessages, shotMessage]);
 
-  const displayCorrectCount = Object.keys(videoAttemptStatus).length;
+  
   const safeCorrectScores = typeof correctScores === 'number' ? correctScores : 0;
 
   const displayPercentage =
@@ -755,16 +788,16 @@ function App() {
               </div>
             )}
             {/* Blackout screen overlayed on top of the video */}
-            {isVideoScreenHidden && isBlackoutForInitialStop && (
-              <div className="video-blackout-screen">
-                {gameLevel === 'advanced' && blackoutCountdown !== null && (
-                 <div className="blackout-timer">
+            {isVideoScreenHidden && (
+            <div className="video-blackout-screen">
+              {gameLevel === 'advanced' && isBlackoutForInitialStop && blackoutCountdown !== null && (
+                <div className="blackout-timer">
                   <span>{blackoutCountdown}</span>
-                 </div>
-                )}
-                {/* Content for blackout screen, e.g., countdown */}
-              </div>
-            )}
+                </div>
+              )}
+              {/* The blackout overlay will now always cover the video when isVideoScreenHidden is true */}
+            </div>
+          )}
           </div>
 
           {/* Apply dynamic color to shotMessage */}
@@ -803,7 +836,7 @@ function App() {
             {/* Score Display - Display only if attempts have been made AND modal is NOT visible */}
             {totalAttemptsTracked > 0 && !showScoreModal && (
                 <p className="score-display">
-                    SCORE: {displayPercentage}% - VIDEO (<strong style={{color: 'white'}}>{displayCorrectCount}</strong>/10)
+                    SCORE: {displayPercentage}% - VIDEO (<strong style={{color: 'white'}}>{Math.min(totalAttemptsTracked, maxVideos)}</strong>/{maxVideos})
                 </p>
             )}
 
@@ -811,7 +844,7 @@ function App() {
               onClick={handleNextVideo}
               className={`action-button ${highlightNextButton ? 'highlight-active' : ''}`}
               // Check player readiness via ref
-              disabled={!videoRef.current?.getIsPlayerReady() || isLoadingVideoDetails || shuffledVideoQueue.length === 0 || showScoreModal}
+              disabled={!videoRef.current?.getIsPlayerReady() || isLoadingVideoDetails || shuffledVideoQueue.length === 0 || showScoreModal || totalAttemptsTracked === maxVideos}
             >
               Next Video
             </button>
