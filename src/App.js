@@ -53,6 +53,9 @@ function App() {
   // NEW: State to control blackout countdown
   const [blackoutCountdown, setBlackoutCountdown] = useState(null); // null means no timer active
 
+  // NEW: State to control the shot buttons disabled/enabled
+  const [canGuess, setCanGuess] = useState(false);
+
   // NEW: Derived state to count how many unique videos have been attempted
   const maxVideos = 10;
   const displayCorrectCount = Math.min(Object.keys(videoAttemptStatus).length, maxVideos);
@@ -282,6 +285,7 @@ function App() {
 
       // Increment totalAttemptsTracked here, reflecting videos presented, capped at 10
       setTotalAttemptsTracked(Math.min(currentShuffledIndex + 1, 10));
+      setCanGuess(false); // Reset guessing state
     }
   }, [currentShuffledIndex, shuffledVideoQueue]);
 
@@ -384,6 +388,9 @@ function App() {
       }
       setVideoAttemptStatus(prev => ({ ...prev, [videoId]: true }));
 
+      // After a guess is made in handleShotButtonClick
+      setCanGuess(false);
+
       // If this is the 10th video's first attempt, show the message, then the modal
       if (currentShuffledIndex === maxVideos - 1) {
         setTimeout(() => {
@@ -466,6 +473,7 @@ function App() {
         setHasTenthVideoBeenAttempted(true);
       }
     }
+
   }, [videoRef, currentVideo, startAtTime, setShotMessage, setDynamicStopTime, correctMessages, incorrectMessages, setShotMessageColor, videoAttemptStatus, displayCorrectCount]);
 
   // Callback for when the video pauses/ends due to stop time or natural end
@@ -478,6 +486,10 @@ function App() {
     setIsBlackoutForInitialStop(true);
   } else {
     setIsBlackoutForInitialStop(false);
+  }
+  // Enable guessing when video pauses at initialStopTime
+  if (dynamicStopTime === currentVideo.initialStopTime) {
+    setCanGuess(true);
   }
 }, [totalAttemptsTracked, hasTenthVideoBeenAttempted, gameLevel, dynamicStopTime, currentVideo]);
 
@@ -806,7 +818,10 @@ function App() {
 
         {/* Controls Section */}
         <section id="controls-section">
-          <ShotButtons onShotButtonClick={handleShotButtonClick} isPlayerReady={videoRef.current?.getIsPlayerReady() && !isLoadingVideoDetails} />
+          <ShotButtons
+            onShotButtonClick={handleShotButtonClick}
+            disabled={!canGuess || !videoRef.current?.getIsPlayerReady() || isLoadingVideoDetails}
+          />
 
           <div className="action-buttons-container">
             <button

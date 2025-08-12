@@ -21,41 +21,37 @@ const buttonStyle = {
   borderRadius: '8px',
   boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
   transition: 'background-color 0.3s ease',
-  // Added disabled styles
-  ':disabled': {
-    backgroundColor: '#cccccc',
-    cursor: 'not-allowed',
-  },
+  // Removed ':disabled' styles; use CSS for disabled state
 };
 
-export default function ShotButtons({ onShotButtonClick, isPlayerReady }) { // Added isPlayerReady prop
+export default function ShotButtons({ onShotButtonClick, disabled }) {
   return (
     <div className="shot-buttons" style={{ marginTop: '10px', display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-      <button onClick={() => onShotButtonClick('Line')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Line')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Line
       </button>
-      <button onClick={() => onShotButtonClick('Angle')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Angle')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Angle
       </button>
-      <button onClick={() => onShotButtonClick('Cut')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Cut')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Cut
       </button>
-      <button onClick={() => onShotButtonClick('Short')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Short')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Short
       </button>
-      <button onClick={() => onShotButtonClick('Jumbo')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Jumbo')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Jumbo
       </button>
-      <button onClick={() => onShotButtonClick('Set Over')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Set Over')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Set Over
       </button>
-      <button onClick={() => onShotButtonClick('Jump Set')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Jump Set')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Jump Set
       </button>
-      <button onClick={() => onShotButtonClick('Hit on 1')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Hit on 1')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Hit on 1
       </button>
-      <button onClick={() => onShotButtonClick('Hit on 2')} className="shot-button" style={buttonStyle} disabled={!isPlayerReady}>
+      <button onClick={() => onShotButtonClick('Hit on 2')} className="shot-button" style={buttonStyle} disabled={disabled}>
         Hit on 2
       </button>
     </div>

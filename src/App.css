@@ -360,9 +360,10 @@ section {
 }
 
 .shot-button:disabled {
-  background-color: #cccccc;
-  cursor: not-allowed;
-  box-shadow: none;
+  background-color: #cccccc !important;
+  color: #888 !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
 }
 
 
