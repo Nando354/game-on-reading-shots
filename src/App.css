@@ -202,7 +202,7 @@ section {
 }
 
 .video-responsive {
-  padding-bottom: 47.25%; /* 16:9 aspect ratio */
+  padding-bottom: 45.25%; /* 16:9 aspect ratio */
 }
 
 .ytp-pause-overlay {/* Hide YouTube's default pause overlay */
@@ -589,31 +589,52 @@ section {
 
 
 /* Media Queries for fine-tuning responsiveness */
-@media (max-width: 2560px) {
+/* 1440px to Max-width 2560px */
+@media (max-width: 2559px) {
   .hamburger-menu-wrapper {
-  position: fixed; /* Keep it fixed on screen */
-  top: 15px; /* Adjust as needed */
-  right: 25px; /* Adjust as needed */
-  z-index: 1000; /* Ensure it stays on top */
-  cursor: pointer;
+    position: fixed; /* Keep it fixed on screen */
+    top: 15px; /* Adjust as needed */
+    right: 10px; /* Adjust as needed */
+    z-index: 1000; /* Ensure it stays on top */
+    cursor: pointer;
+  }
+
+  .hamburger-icon {
+    font-size: 1.7em; /* Size of the hamburger icon */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px; /* Width of the icon container */
+    color: #333; /* Color of the icon */
+    padding: 3px;
+    margin-right: 13px;
+    background-color: rgba(246, 218, 2, 0.55); /* Background for visibility */
+    border-radius: 50px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    transition: background-color 0.3s ease;
+  }
+
+  .sound-icon-container {
+    position: fixed;
+    top: 15px;
+    left: 22px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: rgba(246, 218, 2, 0.55);
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Stronger shadow */
+    padding: 4px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
 }
 
-.hamburger-icon {
-  font-size: 1.7em; /* Size of the hamburger icon */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px; /* Width of the icon container */
-  color: #333; /* Color of the icon */
-  padding: 3px;
-  margin-right: 13px;
-  background-color: rgba(246, 218, 2, 0.55); /* Background for visibility */
-  border-radius: 50px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  transition: background-color 0.3s ease;
-}
-}
-/* Max-width 1439px: Applies to screens smaller than 1440px */
+
+/* 1024px to Max-width 1439px */
 @media (max-width: 1439px) {
   /* General adjustments for screens smaller than 1440px */
   :root {
@@ -636,7 +657,52 @@ section {
   }
 
   .video-responsive {
-    padding-bottom: 58.25%; /* 16:9 aspect ratio */
+    padding-bottom: 50.25%; /* 16:9 aspect ratio */
+  }
+
+  .hamburger-menu-wrapper {
+    position: fixed; /* Keep it fixed on screen */
+    top: 15px; /* Adjust as needed */
+    right: 30px; /* Adjust as needed */
+    z-index: 1000; /* Ensure it stays on top */
+    cursor: pointer;
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    /* Use calc() to subtract the icon's padding to close the gap */
+    top: 46px;
+    right: 34px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    min-width: 145px;
+    padding: 10px 0;
+    list-style: none;
+    margin: 0;
+    z-index: 3001;
+  }
+
+  .dropdown-menu div {
+    padding: 8px 15px;
+  }
+
+  .sound-icon-container {
+    position: fixed;
+    top: 15px;
+    left: 42px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: rgba(246, 218, 2, 0.55);
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Stronger shadow */
+    padding: 4px;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
   }
 
   .App-header h1 {
@@ -658,15 +724,9 @@ section {
     padding-left: 10px;
     padding-right: 10px;
   }
-
-  /*
-    Removed .shot-button rules from this media query
-    to keep them consistent for screens > 600px.
-    They will now inherit from the default .shot-button rule.
-  */
 }
 
-/* Max-width 1023px: Applies to tablets and smaller screens */
+/* 768px to Max-width 1023px */
 @media (max-width: 1023px) {
   :root {
     --button-base-font-size: 1rem; /* Smaller font for buttons */
@@ -678,7 +738,7 @@ section {
   position: relative; /* Needed for absolute positioning of blackout screen */
   width: 100%; /* Take full width of its parent (#video-section) */
   max-width: 1200px; /* Max width for the video player itself */
-  padding-bottom: 50.25%; /* Updated to 46.25% as requested */
+  padding-bottom: 68%; /* Updated to 46.25% as requested */
   height: 0; /* Important for aspect ratio trick */
   margin-bottom: 0; /* Removed margin-bottom here, gap on main handles spacing */
   background-color: black; /* Default background for the container */
@@ -687,7 +747,64 @@ section {
   }
 
   .video-responsive {
-    padding-bottom: 80.25%; /* 16:9 aspect ratio */
+    padding-bottom: 70.25%; /* 16:9 aspect ratio */
+  }
+
+  .hamburger-menu-wrapper {
+    top: 10px;
+    right: 32px;
+  }
+
+  .hamburger-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 25px;
+    font-size: 2em;
+    padding: 0px;
+    margin-right: 0px;
+    background-color: rgba(246, 218, 2, 0.42);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .dropdown-menu {
+    position: absolute;
+    /* Use calc() to subtract the icon's padding to close the gap */
+    top: 40px;
+    right: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    min-width: 150px;
+    padding: 10px 0;
+    list-style: none;
+    margin: 0;
+    z-index: 3001;
+  }
+
+  .dropdown-menu div {
+    padding: 8px 15px;
+  }
+
+  .sound-icon-container {
+    position: fixed;
+    top: 13px;
+    left: 32px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: rgba(246, 218, 2, 0.55);
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Stronger shadow */
+    padding: 4px;
+    width: 29px;
+    height: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .sound-icon-container:hover {
+    background-color: rgba(246, 218, 2, 0.8);
   }
 
   .App-header h1 {
@@ -738,139 +855,25 @@ section {
     font-size: clamp(0.9rem, 3vw, 1.2em);
   }
 
-   /* Make sections wider on smaller screens */
-   section {
-     max-width: calc(100% - var(--main-content-padding) * 2); /* Full width minus padding */
-   }
-
-   /* NEW: Adjust video player container aspect ratio for tablets and smaller */
-   .video-player-container {
-     padding-bottom: 80%; /* Made video taller on tablets and smaller */
-   }
-
-   /* Adjust main gap for tablets and smaller */
-   main {
-     gap: 10px; /* Reduced gap between sections */
-   }
-}
-
-
-@media (max-width: 768px) {
-  .video-player-container {
-    position: relative; /* Needed for absolute positioning of blackout screen */
-    width: 100%; /* Take full width of its parent (#video-section) */
-    max-width: 1200px; /* Max width for the video player itself */
-    padding-bottom: 70.25%; /* Updated to 46.25% as requested */
-    height: 0; /* Important for aspect ratio trick */
-    margin-bottom: 0; /* Removed margin-bottom here, gap on main handles spacing */
-    background-color: black; /* Default background for the container */
-    border-radius: 8px; /* Rounded corners for the video area */
-    overflow: hidden; /* Hide anything outside the rounded corners */
+  /* Make sections wider on smaller screens */
+  section {
+    max-width: calc(100% - var(--main-content-padding) * 2); /* Full width minus padding */
   }
 
-  .video-responsive {
-    padding-bottom: 80.25%; /* 16:9 aspect ratio */
+  /* Adjust main gap for tablets and smaller */
+  main {
+    gap: 10px; /* Reduced gap between sections */
   }
 }
-/* For very small screens (e.g., mobile phones) */
-@media (max-width: 600px) {
+
+/* 435px to Max-width 767px */
+@media (max-width: 767px) {
   :root {
     --button-base-font-size: 0.9rem;
     --button-padding: 4px 8px;
     --main-content-padding: 10px;
   }
-  .video-player-container {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
-    padding-bottom: 150%; /* Use the most appropriate value */
-    height: 0;
-    margin-bottom: 0;
-    background-color: black;
-    border-radius: 8px;
-    overflow: hidden;
-  }
-  .video-responsive {
-    padding-bottom: 180.25%;
-  }
-  .App-header h1 {
-    font-size: clamp(1.5rem, 8vw, 2.2rem);
-  }
-  .instructions-content {
-    padding: 15px;
-  }
-  .instructions-title {
-    font-size: clamp(1.5rem, 6vw, 2.2rem);
-  }
-  .instructions-text,
-  .instructions-list li {
-    font-size: clamp(0.9rem, 2.8vw, 1.05rem);
-  }
-  .start-button {
-    font-size: clamp(1rem, 4vw, 1.2rem);
-    padding: 8px 15px;
-    min-width: 150px;
-  }
-  #controls-section {
-    padding: 2px;
-  }
-  .action-buttons-container {
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-  .action-button {
-    width: 90%;
-    max-width: 280px;
-    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
-  }
-  .shot-message {
-    font-size: clamp(1rem, 6vw, 2rem);
-  }
-  .video-status-text {
-    font-size: clamp(0.7rem, 2.5vw, 1em);
-  }
-  .loading-message {
-    font-size: clamp(0.9rem, 2.8vw, 1.1em);
-  }
-  section {
-    max-width: 98%;
-    padding-left: 5px;
-    padding-right: 5px;
-  }
-  .shot-buttons .shot-button {
-    padding: 5px 10px !important;
-    font-size: 0.9rem !important;
-    max-width: 80px;
-    flex-grow: 1;
-  }
-  main {
-    gap: 5px;
-  }
-  .hamburger-menu-wrapper {
-    top: 10px;
-    right: 10px;
-  }
-  .hamburger-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 25px;
-    font-size: 2em;
-    padding: 0px;
-    margin-right: 0px;
-    background-color: rgba(246, 218, 2, 0.42);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  }
-  .dropdown-menu {
-    min-width: 150px;
-    font-size: 0.9rem;
-  }
-  .dropdown-menu div {
-    padding: 8px 15px;
-  }
-}
 
-@media (max-width: 425px) {
   .video-player-container {
     position: relative;
     width: 100%;
@@ -882,14 +885,174 @@ section {
     border-radius: 8px;
     overflow: hidden;
   }
+
   .video-responsive {
     padding-bottom: 180.25%;
+  }
+
+  .App-header h1 {
+    font-size: clamp(1.5rem, 8vw, 2.2rem);
+  }
+
+  .instructions-content {
+    padding: 15px;
+  }
+
+  .instructions-title {
+    font-size: clamp(1.5rem, 6vw, 2.2rem);
+  }
+
+  .instructions-text,
+  .instructions-list li {
+    font-size: clamp(0.9rem, 2.8vw, 1.05rem);
+  }
+
+  .start-button {
+    font-size: clamp(1rem, 4vw, 1.2rem);
+    padding: 8px 15px;
+    min-width: 150px;
+  }
+
+  #controls-section {
+    padding: 2px;
+  }
+
+  .action-buttons-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .action-button {
+    width: 90%;
+    max-width: 280px;
+    font-size: clamp(0.9rem, 3.5vw, 1.1rem);
+  }
+
+  .shot-message {
+    font-size: clamp(1rem, 6vw, 2rem);
+  }
+
+  .video-status-text {
+    font-size: clamp(0.7rem, 2.5vw, 1em);
+  }
+
+  .loading-message {
+    font-size: clamp(0.9rem, 2.8vw, 1.1em);
+  }
+
+  section {
+    max-width: 98%;
+    padding-left: 5px;
+    padding-right: 5px;
+  }
+
+  .shot-buttons .shot-button {
+    padding: 5px 10px !important;
+    font-size: 0.9rem !important;
+    max-width: 80px;
+    flex-grow: 1;
+  }
+
+  main {
+    gap: 5px;
+  }
+
+  .hamburger-menu-wrapper {
+    top: 10px;
+    right: 16px;
+  }
+
+  .hamburger-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 25px;
+    font-size: 2em;
+    padding: 0px;
+    margin-right: 0px;
+    background-color: rgba(246, 218, 2, 0.42);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .dropdown-menu {
+    min-width: 130px;
+    font-size: 0.9rem;
+  }
+
+  .dropdown-menu div {
+    padding: 8px 15px;
   }
 
   .sound-icon-container {
     position: fixed;
     top: 13px;
-    left: 10px;
+    left: 16px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: rgba(246, 218, 2, 0.55);
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Stronger shadow */
+    padding: 4px;
+    width: 29px;
+    height: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .sound-icon-container:hover {
+    background-color: rgba(246, 218, 2, 0.8);
+  }
+}
+
+/* 375px to Max-width 424px */
+@media (max-width: 424px) {
+  .video-player-container {
+    position: relative;
+    width: 100%;
+    max-width: 1200px;
+    padding-bottom: 140%; /* Use the most appropriate value */
+    height: 0;
+    margin-bottom: 0;
+    background-color: black;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .video-responsive {
+    padding-bottom: 180.25%;
+  }
+
+  .hamburger-menu-wrapper {
+    top: 10px;
+    right: 15px;
+  }
+
+  .hamburger-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 25px;
+    font-size: 2em;
+    padding: 0px;
+    margin-right: 0px;
+    background-color: rgba(246, 218, 2, 0.42);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .dropdown-menu {
+    min-width: 130px;
+    font-size: 0.9rem;
+  }
+
+  .dropdown-menu div {
+    padding: 8px 15px;
+  }
+
+  .sound-icon-container {
+    position: fixed;
+    top: 13px;
+    left: 15px;
     z-index: 1000;
     cursor: pointer;
     background-color: rgba(246, 218, 2, 0.55);
@@ -915,48 +1078,32 @@ section {
   }
 
   .dropdown-menu {
-  position: absolute;
-  /* Use calc() to subtract the icon's padding to close the gap */
-  top: 37px;
-  right: 22px;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-  min-width: 125px;
-  padding: 8px 0;
-  list-style: none;
-  margin: 0;
-  z-index: 3001;
-}
-
-.dropdown-menu div {
-  padding: 10px 20px;
-  cursor: pointer;
-  color: #333;
-  font-size: 1rem;
-  transition: background-color 0.2s ease;
-}
-
-}
-
-@media (max-width: 375px) {
-  .video-player-container {
-    position: relative;
-    width: 100%;
-    max-width: 1200px;
-    padding-bottom: 140%; /* Use the most appropriate value */
-    height: 0;
-    margin-bottom: 0;
-    background-color: black;
+    position: absolute;
+    /* Use calc() to subtract the icon's padding to close the gap */
+    top: 37px;
+    right: 22px;
+    background-color: white;
     border-radius: 8px;
-    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    min-width: 125px;
+    padding: 8px 0;
+    list-style: none;
+    margin: 0;
+    z-index: 3001;
   }
-  .video-responsive {
-    padding-bottom: 180.25%;
+
+  .dropdown-menu div {
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #333;
+    font-size: 1rem;
+    transition: background-color 0.2s ease;
   }
+
 }
 
-@media (max-width: 320px) {
+/* 0px && 320px to Max-width 374px */
+@media (max-width: 374px) {
   .video-player-container {
     position: relative;
     width: 100%;
@@ -968,7 +1115,58 @@ section {
     border-radius: 8px;
     overflow: hidden;
   }
+
   .video-responsive {
     padding-bottom: 180.25%;
   }
+
+  .hamburger-menu-wrapper {
+    top: 10px;
+    right: 15px;
+  }
+
+  .hamburger-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 25px;
+    font-size: 2em;
+    padding: 0px;
+    margin-right: 0px;
+    background-color: rgba(246, 218, 2, 0.42);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+
+  .dropdown-menu {
+    top: 37px;
+    right: 18px;
+    min-width: 118px;
+    font-size: 0.9rem;
+  }
+
+  .dropdown-menu div {
+    padding: 8px 15px;
+  }
+
+  .sound-icon-container {
+    position: fixed;
+    top: 13px;
+    left: 15px;
+    z-index: 1000;
+    cursor: pointer;
+    background-color: rgba(246, 218, 2, 0.55);
+    border-radius: 30px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.25); /* Stronger shadow */
+    padding: 4px;
+    width: 29px;
+    height: 29px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s ease;
+  }
+
+  .sound-icon-container:hover {
+    background-color: rgba(246, 218, 2, 0.8);
+  }
 }
+
