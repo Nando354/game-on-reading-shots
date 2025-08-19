@@ -27,6 +27,8 @@ function App() {
   // State to control visibility of the hamburger menu dropdown
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
 
+  const [timeoutId, setTimeoutId] = useState(null);
+
   // States for button highlighting
   const [highlightNextButton, setHighlightNextButton] = useState(false);
   const [highlightRestartButton, setHighlightRestartButton] = useState(false);
@@ -684,24 +686,27 @@ function App() {
     ? Math.round((safeCorrectScores / displayCorrectCount) * 100)
     : 0;
 
-
+  console.log('show hamburger menu:', showHamburgerMenu);
   return (
     <div className="App">
-      {/* Audio element for background music */}
-      <audio ref={backgroundMusicRef} src="/Alan Walker - Fade.mp3" preload="auto" />
-      {/* Audio elements for sound effects */}
-      <audio ref={applauseSoundRef} src="/applause-108368.mp3" preload="auto" />
-      <audio ref={awwSoundRef} src="/aww-8277.mp3" preload="auto" />
-
-      <header className="App-header">
-        <h1>READ THE SHOT!</h1>
-      </header>
-
-      {/* Hamburger Menu Container - Fixed position to float on all screens */}
+      {/* Hamburger Menu - always visible */}
       <div
-        className="hamburger-menu-container"
-        onMouseEnter={() => setShowHamburgerMenu(true)}
-        onMouseLeave={() => setShowHamburgerMenu(false)}
+        className="hamburger-menu-wrapper"
+        onMouseEnter={() => {
+          // Clear any pending timeout to prevent the menu from hiding
+          if (timeoutId) {
+            clearTimeout(timeoutId);
+            setTimeoutId(null);
+          }
+          setShowHamburgerMenu(true);
+        }}
+        onMouseLeave={() => {
+          // Set a timeout to hide the menu after a brief delay
+          const id = setTimeout(() => {
+            setShowHamburgerMenu(false);
+          }, 650); // Delay of 150 milliseconds
+          setTimeoutId(id);
+        }}
       >
         <div className="hamburger-icon">
           ☰ {/* Hamburger icon character */}
@@ -715,6 +720,36 @@ function App() {
         )}
       </div>
 
+      {/* Sound Icon - always visible */}
+      <div className="sound-icon-container" onClick={() => {
+        if (backgroundMusicRef.current) {
+          if (backgroundMusicRef.current.paused) {
+            backgroundMusicRef.current.play();
+          } else {
+            backgroundMusicRef.current.pause();
+          }
+        }
+      }}>
+        <img
+          src="/sound-icon.svg"
+          alt="Toggle sound"
+          className={`sound-icon ${backgroundMusicRef.current && !backgroundMusicRef.current.paused ? 'sound-on' : 'sound-off'}`}
+        />
+      </div>
+
+      {/* App Header - only on instructions page */}
+      {showInstructions && (
+        <header className="App-header">
+          <h1>READ THE SHOT!</h1>
+        </header>
+      )}
+
+      {/* Audio element for background music */}
+      <audio ref={backgroundMusicRef} src="/Alan Walker - Fade.mp3" preload="auto" />
+      {/* Audio elements for sound effects */}
+      <audio ref={applauseSoundRef} src="/applause-108368.mp3" preload="auto" />
+      <audio ref={awwSoundRef} src="/aww-8277.mp3" preload="auto" />
+ 
       {/* Instructions Page (conditionally visible using CSS class) */}
       <section id="instructions-page" className={showInstructions ? '' : 'hidden'}>
         <div className="instructions-content">
@@ -762,11 +797,27 @@ function App() {
                 <li>Click "Next Video" to move to the next video in the list.</li>
               </ul>
             </li>
+            <li><strong>Level Selection:</strong> 
+              <ul className="action-list">
+                <li>Beginner Level - You can see the paused video and have time to make your selection</li>
+                <li>Advanced Level - The video will play up until the designated shot, the video then goes dark. A timer gives you three seconds to read your shot</li>
+              </ul>
+            </li>
             <li><strong>Score Tracking:</strong> 
               <ul className="action-list">
                 <li>Your score will be tracked over the first 10 unique videos and shots you attempt to read.</li>
                 <li>Your score is only tracked on your first attempt any subsequent video restarts will not be counted towards your points</li>
                 <li>After 10 attempts, your final score will be displayed, and you can choose to play again!</li>
+              </ul>
+            </li>
+            <li><strong>Pointers:</strong> 
+              <ul className="action-list">
+                <li>Reading the shot is a very important part of defense</li>
+                <li>To properly read a shot you need to be standing still with both feet firmly planted, it also helps if you are in a low athletic stance</li>
+                <li>This will allow you to have a better view of the hitter's body language. If you are moving while trying to read the shot it becomes difficult to accurately assess the situation</li>
+                <li>So before the hitter is swinging stop, plant, get in position and read the shot</li>
+                <li>Because your feet are fully planted and you are in a low athletic stance you can then efficiently and quickly push off the ground with either foot and move in the direction the ball is going</li>
+                <li>Remember that you should always be keeping an eye on the ball and the opponent who has the ball in control to be ready for anything</li>
               </ul>
             </li>
           </ol>
@@ -913,22 +964,7 @@ function App() {
         </div>
       )}
 
-      {/* Sound Icon for toggling background music */}
-      <div className="sound-icon-container" onClick={() => {
-  if (backgroundMusicRef.current) {
-    if (backgroundMusicRef.current.paused) {
-      backgroundMusicRef.current.play();
-    } else {
-      backgroundMusicRef.current.pause();
-    }
-  }
-}}>
-  <img
-    src="/sound-icon.svg"
-    alt="Toggle sound"
-    className={`sound-icon ${backgroundMusicRef.current && !backgroundMusicRef.current.paused ? 'sound-on' : 'sound-off'}`}
-  />
-</div>
+      
     </div>
   );
 }
