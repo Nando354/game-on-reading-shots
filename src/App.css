@@ -95,6 +95,28 @@ html, body, #root {
   padding-left: 20px;
 }
 
+.pointers-title {
+  font-size: clamp(1.5rem, 4vw, 2.8rem); /* Responsive font size */
+  color: #333;
+  margin-bottom: 20px;
+  margin-top: 60px;
+  text-align: center; /* Center title */
+}
+
+.no-numbering {
+  list-style-type: none; /* Remove default numbering */
+  padding-left: 0; /* Remove padding for no numbering */
+}
+
+.fernando-image {
+  width: 60px;
+  height: auto;
+  /* border-radius: 75px; Make it circular */
+  margin-top: 10px;
+  margin-left: 40px;
+  border: 5px solid black;
+}
+
 /* NEW: Styles for the level selection container */
 .level-selection-container {
   display: flex;
@@ -192,7 +214,7 @@ section {
   position: relative; /* Needed for absolute positioning of blackout screen */
   width: 100%; /* Take full width of its parent (#video-section) */
   max-width: 1200px; /* Max width for the video player itself */
-  padding-bottom: 36.25%; /* Updated to 46.25% as requested */
+  padding-bottom: 40.25%; /* Updated to 46.25% as requested */
   height: 0; /* Important for aspect ratio trick */
   margin-bottom: 0; /* Removed margin-bottom here, gap on main handles spacing */
   background-color: black; /* Default background for the container */
@@ -202,12 +224,13 @@ section {
 }
 
 .video-responsive {
-  padding-bottom: 45.25%; /* 16:9 aspect ratio */
+  padding-bottom: 50.25%; /* 16:9 aspect ratio */
 }
 
 .ytp-pause-overlay {/* Hide YouTube's default pause overlay */
   background: none !important; /* Remove background */
   display: none !important; /* Hide the overlay */
+  position: none !important; /* Remove position */
 }
 
 .ytp-button {

@@ -3,6 +3,7 @@ import Video from './components/Video';
 import './App.css';
 import './Video.css'; // Keep this import for now
 import ShotButtons from './components/ShotButtons';
+import mevballpic from './assets/images/Mevballpic.jpg'; // Import the image  
 
 // Utility function to shuffle an array (Fisher-Yates (Knuth) shuffle)
 const shuffleArray = (array) => {
@@ -65,6 +66,9 @@ function App() {
 
   // Define an array of video objects, each with an ID, a title, a URL, and the correct shot
   const initialVideoList = useMemo(() => [
+    { id: "Vh2WoT8ZJUA", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 7.70 },
+    { id: "yl0H9a_Gi2c", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 9.14 },
+    { id: "PXKI4ntjXRI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 6.47 },
     { id: "21KPtT-e73o", title: "Loading title...", videoUrl: null, correctShot: "Short", initialStartTime: 0.0, initialStopTime: 4.80 },
     { id: "ncticos1PKc", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 4.55},
     { id: "OoqS1pvUQbY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 3.35 },
@@ -72,10 +76,10 @@ function App() {
     { id: "4x8cuBp8hl4", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 0.0, initialStopTime: 4.57 },
     { id: "i9Zh0oxh5gs", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 5.0, initialStopTime: 9.51 },
     { id: "oa9wFeBFzMY", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 8.26 },
-      { id: "sg9C1Hu3HW8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.8, initialStopTime: 7.00 },
-      { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 5.89 },
-      { id: "lKDk0zIWNC4", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 5.04 },
-      { id: "oFm_dwzmjD8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 4.52 },
+    { id: "sg9C1Hu3HW8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 1.8, initialStopTime: 7.00 },
+    { id: "wqzozK6ErrI", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 5.89 },
+    { id: "lKDk0zIWNC4", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 0.0, initialStopTime: 5.04 },
+    { id: "oFm_dwzmjD8", title: "Loading title...", videoUrl: null, correctShot: "Line", initialStartTime: 0.0, initialStopTime: 4.52 },
     { id: "trV2xBDevf8", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 2.0, initialStopTime: 6.59 },
     { id: "jJ3o8WQwxgs", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 0.0, initialStopTime: 2.05 },
     { id: "Nf39ym_abvo", title: "Loading title...", videoUrl: null, correctShot: "Angle", initialStartTime: 3.2, initialStopTime: 9.23 },
@@ -90,8 +94,7 @@ function App() {
     { id: "0MUJRveghTc", title: "Loading title...", videoUrl: null, correctShot: "Set Over", initialStartTime: 7.0, initialStopTime: 14.45 },
     { id: "2J46Jd3lz_k", title: "Loading title...", videoUrl: null, correctShot: "Hit on 2", initialStartTime: 4.0, initialStopTime: 7.69 },
     { id: "WZ9RhCIN9_Q", title: "Loading title...", videoUrl: null, correctShot: "Cut", initialStartTime: 11.0, initialStopTime: 16.00 },
-    { id: "p-zaS41MFyQ", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 0.0, initialStopTime: 7.71 },
-    { id: "2mUUc3scIyY", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 6.0, initialStopTime: 15.59 }
+    { id: "p-zaS41MFyQ", title: "Loading title...", videoUrl: null, correctShot: "Jumbo", initialStartTime: 0.0, initialStopTime: 7.71 }
   ], []);
 
   // State to hold the fully populated video list (with titles/URLs fetched)
@@ -560,6 +563,7 @@ function App() {
     setShowScoreModal(false); // Ensure modal is hidden
     setHasTenthVideoBeenAttempted(false); // NEW: Reset this flag
     setIsVideoScreenHidden(false); // Ensure video is visible at game start
+    setShotMessage('');
 
     const newShuffledQueue = shuffleArray([...videoList]);
     setShuffledVideoQueue(newShuffledQueue);
@@ -810,18 +814,50 @@ function App() {
                 <li>After 10 attempts, your final score will be displayed, and you can choose to play again!</li>
               </ul>
             </li>
-            <li><strong>Pointers:</strong> 
+            <li><strong>Shots:</strong> 
               <ul className="action-list">
-                <li>Reading the shot is a very important part of defense</li>
-                <li>To properly read a shot you need to be standing still with both feet firmly planted. It helps if you are in a low athletic stance and in a neutral area of the side of the court you are guarding</li>
-                <li>This will allow you to have a better view of the hitter's body language. If you are moving while trying to read the shot it becomes difficult to accurately assess the situation</li>
+                <li>Line Shot - Can be hard driven or not but is swung in a foward direction of the oppositions court</li>
+                <li>Angle Shot - Can be hard driven or not but is swung into the opposite angle of the oppositions court</li>
+                <li>Cut Shot - Usually a swiping type motion that creates a sharp angle and lands closer to the net than further away making it difficult to get to</li>
+                <li>Short Shot - Any type of hit, poke etc that lands closer to the net of the opposing teams side</li>
+                <li>Jumbo Shot - Towards the back line on either side of the opposing teams court usually has a higher arc that goes over the head of the opposing player but still in the court.</li>
+                <li>Set Over - Instead of setting to the player the setter sets over the net to deceive the opposing team and try to catch them off gaurd. Shoulders needs to be square to the final location and set needs to be clean. </li>
+                <li>Jump Set - the setter fakes like he is going to swing on two but instead sets the hitter usually while in mid air.</li>
+                <li>Hit on 1 - Ball is hit to opposing court on the first touch to try to catch the team off gaurd or while they are out of position</li>
+                <li>Hit on 2 - Ball is hit to opposing court on the second touch to try to catch the team off gaurd or while they are out of position</li>
+              </ul>
+            </li>
+            <h2 className="pointers-title">Helpful Pointers</h2>
+            <li className="no-numbering"><strong>How to Read The Body and Shot:</strong> 
+              <ul className="action-list">
+                <li>If a player fully loads their arms on the approach and fully opens their arm swing back they will usually hit hard. Where their body is facing can often but not always be an indicator of where they are hitting as they can turn their wrist/hand also. The speed of their aproach can also be an indicator of their hit, a slower approach might mean a shot instead of a hit.</li>
+                <li>A jumbo shot will usually not have a fully open arm swing instead they will usually stop their arm half way up and pop the ball off of their open hand to get that higher arc. Of course it can also be a bump/poke to the back line with a higher arc.</li>
+                <li>A cut shot can be done in several ways depending on the skill level. They can either face their whole body facing the direction of the cut shot or not face it but snap their wrist last second. They can have a full aproach and load and fully open their arm swing and snap their wrist last second or swipe the ball. It can also be done without a full open arm swing and instead the arm stoping midway and a wrist swipe or hand pop. So it can be obvious and slow or it can be fast and deceiving. The higher level players will make it look like a normal approach with a full load and open arm swing looking like a fast paced hit but with a sharp cut at the end. The cut shot can have an arc or be fast paced.</li>
+                <li>A short shot can be done in several ways as well but usually requires some slowing down to either slowly poke or hit/pop/tap the ball closer to the net onto your side. It can of course also be a controled short bump or poke over.  </li>
+                <li>You should be able to read every shot even if you cannot get to it in time.</li>
+              </ul>
+            </li>
+            <li className="no-numbering"><strong>Defensive Reading Position:</strong> 
+              <ul className="action-list">
+                <li>Your defensive positioning is crucial for reading the shot effectively.</li>
+                <li>You should be reading the shot and not guessing.</li>
+                <li>To properly read a shot you need to be standing still with both feet firmly planted on the ground. So when the hitter gets set make sure you stop where ever you are on the court. It helps if you get in a low athletic stance with arms open and in neutral position to cover low or high hits. Hopefully be in a neutral area of the side of the court you are guarding</li>
+                <li>Standing still will allow you to have a better view of the hitter's body language. If you are moving while trying to read the shot it becomes difficult to accurately assess the situation</li>
                 <li>So before the hitter is swinging stop, plant, get in your low athletic position and read the shot</li>
-                <li>Because your feet are fully planted and you are in a low athletic stance you can then efficiently and quickly push off the ground with either foot and move in the direction the ball is going</li>
-                <li>Remember that you should always be keeping an eye on the ball and the opponent who has the ball in control to be ready for anything</li>
+                <li>Because both of your feet are fully planted and you are in a low athletic stance you can then efficiently and quickly push off the ground with either foot and move in the direction where the ball is going</li>
+                <li>Remember that you should always be keeping an eye on the ball and the opponent who has the ball in control to be ready for anything, hit on 1, hit on 2, set over, etc. Reading the shot is not only for the third touch.</li>
+                <li>Ball control matters once you do read the shot. You still have to be able to pass/set/hit the ball accurately after you succeed in reading the shot.</li>
+              </ul>
+            </li>
+            <li className="no-numbering"><strong>About:</strong> 
+              <ul className="action-list">
+                <li>If you have any questions feel free to reach out to Fernando via email Gameonvolleyballusa@gmail.com</li>
+                <li>If you see me on a court near you say hi and let me know if this app has helped you or your students at all.</li>
               </ul>
             </li>
           </ol>
-          
+
+          <img src={mevballpic} alt="Fernando" className="fernando-image" />
         </div>
       </section>
 
