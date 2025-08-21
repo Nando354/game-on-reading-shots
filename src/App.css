@@ -889,7 +889,7 @@ section {
   }
 }
 
-/* 435px to Max-width 767px */
+/* 425px to Max-width 767px */
 @media (max-width: 767px) {
   :root {
     --button-base-font-size: 0.9rem;
@@ -901,7 +901,7 @@ section {
     position: relative;
     width: 100%;
     max-width: 1200px;
-    padding-bottom: 120%; /* Use the most appropriate value */
+    padding-bottom: 115%; /* Use the most appropriate value */
     height: 0;
     margin-bottom: 0;
     background-color: black;
@@ -1035,7 +1035,7 @@ section {
     position: relative;
     width: 100%;
     max-width: 1200px;
-    padding-bottom: 140%; /* Use the most appropriate value */
+    padding-bottom: 125%; /* Use the most appropriate value */
     height: 0;
     margin-bottom: 0;
     background-color: black;
